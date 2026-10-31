@@ -1,0 +1,190 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net catch-all: deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'password');
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validation Blueprints
+    function isValidVisitor(val) {
+      return val.count is number && val.count >= 0 &&
+             (!val.keys().hasAny(['updatedAt']) || (val.updatedAt is string && val.updatedAt.size() <= 64)) &&
+             (!val.keys().hasAny(['recentLogs']) || (val.recentLogs is list && val.recentLogs.size() <= 30)) &&
+             (!val.keys().hasAny(['dailyStats']) || (val.dailyStats is list && val.dailyStats.size() <= 60));
+    }
+
+    function isValidVisitorLog(val) {
+      return val.id is string && val.id.size() <= 128 &&
+             val.visitorNumber is number && val.visitorNumber >= 0 &&
+             val.timestamp is string && val.timestamp.size() <= 64 &&
+             (!val.keys().hasAny(['device']) || (val.device is string && val.device.size() <= 128)) &&
+             (!val.keys().hasAny(['browser']) || (val.browser is string && val.browser.size() <= 128)) &&
+             (!val.keys().hasAny(['os']) || (val.os is string && val.os.size() <= 128)) &&
+             (!val.keys().hasAny(['timezone']) || (val.timezone is string && val.timezone.size() <= 128)) &&
+             (!val.keys().hasAny(['language']) || (val.language is string && val.language.size() <= 32)) &&
+             (!val.keys().hasAny(['screen']) || (val.screen is string && val.screen.size() <= 64));
+    }
+
+    function isValidUser(val) {
+      return val.uid is string && val.uid.size() <= 128 && val.uid == request.auth.uid &&
+             val.email is string && val.email.size() <= 256 &&
+             (!val.keys().hasAny(['displayName']) || (val.displayName is string && val.displayName.size() <= 256)) &&
+             (!val.keys().hasAny(['photoURL']) || (val.photoURL is string && val.photoURL.size() <= 2048)) &&
+             (!val.keys().hasAny(['emailVerified']) || (val.emailVerified is bool)) &&
+             (!val.keys().hasAny(['createdAt']) || (val.createdAt is string && val.createdAt.size() <= 64)) &&
+             (!val.keys().hasAny(['lastActive']) || (val.lastActive is string && val.lastActive.size() <= 64)) &&
+             (!val.keys().hasAny(['plan']) || (val.plan is string && val.plan.size() <= 32)) &&
+             (!val.keys().hasAny(['subscriptionStatus']) || (val.subscriptionStatus is string && val.subscriptionStatus.size() <= 32)) &&
+             (!val.keys().hasAny(['billingCycle']) || (val.billingCycle is string && val.billingCycle.size() <= 32)) &&
+             (!val.keys().hasAny(['renewalDate']) || (val.renewalDate is string && val.renewalDate.size() <= 64)) &&
+             (!val.keys().hasAny(['dailyUsageCount']) || (val.dailyUsageCount is number)) &&
+             (!val.keys().hasAny(['lastUsageDate']) || (val.lastUsageDate is string && val.lastUsageDate.size() <= 64)) &&
+             (!val.keys().hasAny(['backupNotificationEmailEnabled']) || (val.backupNotificationEmailEnabled is bool)) &&
+             (!val.keys().hasAny(['lastBackupEmailSent']) || (val.lastBackupEmailSent is string && val.lastBackupEmailSent.size() <= 64));
+    }
+
+    function isValidHistory(val) {
+      return val.id is string && val.id.size() <= 128 &&
+             val.timestamp is string && val.timestamp.size() <= 64 &&
+             val.originalText is string && val.originalText.size() <= 50000 &&
+             val.optimizedText is string && val.optimizedText.size() <= 100000 &&
+             val.model is string && val.model.size() <= 64 &&
+             val.tone is string && val.tone.size() <= 64 &&
+             val.category is string && val.category.size() <= 64 &&
+             (!val.keys().hasAny(['translatedText']) || (val.translatedText is string && val.translatedText.size() <= 100000)) &&
+             (!val.keys().hasAny(['actionType']) || (val.actionType is string && val.actionType.size() <= 64)) &&
+             (!val.keys().hasAny(['isFallback']) || (val.isFallback is bool)) &&
+             (!val.keys().hasAny(['styleImage']) || (val.styleImage is string && val.styleImage.size() <= 2048)) &&
+             (!val.keys().hasAny(['contentImage']) || (val.contentImage is string && val.contentImage.size() <= 2048)) &&
+             (!val.keys().hasAny(['notes']) || (val.notes is string && val.notes.size() <= 10000)) &&
+             (!val.keys().hasAny(['isMimicMode']) || (val.isMimicMode is bool)) &&
+             (!val.keys().hasAny(['isFavorite']) || (val.isFavorite is bool)) &&
+             (!val.keys().hasAny(['rating']) || (val.rating is number)) &&
+             (!val.keys().hasAny(['tags']) || (val.tags is list && val.tags.size() <= 50));
+    }
+
+    // Rules for Unique Visitors
+    match /visitors/{id} {
+      allow read: if true;
+      allow create: if isValidId(id) && id == 'global' && isValidVisitor(incoming());
+      allow update: if isValidId(id) && id == 'global' && isValidVisitor(incoming()) &&
+                    incoming().count is number && incoming().count >= 0;
+
+      match /logs/{logId} {
+        allow read: if true;
+        allow create: if isValidId(logId) && isValidVisitorLog(incoming());
+      }
+
+      match /active_sessions/{sessionId} {
+        allow read, write: if true;
+      }
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email != null && 
+        (request.auth.token.email == 'adwwaw@gmail.com' || request.auth.token.email == 'adwwaw@GMAIL.COM' ||
+         request.auth.token.email == 'adouaourachid@gmail.com' || request.auth.token.email == 'adouaourachid@GMAIL.COM');
+    }
+
+    function isValidSubscriptionRequest(val) {
+      return val.id is string && val.id.size() <= 128 &&
+             val.userId is string && val.userId == request.auth.uid &&
+             val.plan is string && val.plan in ['lite', 'pro', 'studio'] &&
+             val.billingCycle is string && val.billingCycle in ['monthly', 'annual'] &&
+             val.paymentMethod is string && val.paymentMethod.size() <= 64 &&
+             val.transactionId is string && val.transactionId.size() <= 256 &&
+             val.status is string && val.status in ['pending_verification', 'approved', 'rejected'] &&
+             val.createdAt is string && val.createdAt.size() <= 64;
+    }
+
+    // Rules for Test Connection check
+    match /test/{id} {
+      allow read: if true;
+    }
+
+    // Rules for User Profiles (Protected against unauthorized self-upgrades)
+    match /users/{userId} {
+      allow get: if (isSignedIn() && request.auth.uid == userId && isValidId(userId)) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUser(incoming()) &&
+                    (isAdmin() || !incoming().keys().hasAny(['plan']) || incoming().plan == 'free');
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUser(incoming()) &&
+                    (isAdmin() || 
+                     !incoming().keys().hasAny(['plan']) || 
+                     (existing().keys().hasAny(['plan']) && incoming().plan == existing().plan) ||
+                     (!existing().keys().hasAny(['plan']) && incoming().plan == 'free'));
+
+      // Users can submit subscription verification requests (e.g. Binance Pay TX ID)
+      match /subscription_requests/{reqId} {
+        allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin()) && isValidId(userId) && isValidId(reqId);
+        allow list: if isSignedIn() && (request.auth.uid == userId || isAdmin()) && isValidId(userId);
+        allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(reqId) &&
+                      isValidSubscriptionRequest(incoming()) && incoming().status == 'pending_verification';
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    // Rules for User specific history subcollections
+    match /users/{userId}/history/{itemId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(itemId);
+      allow list: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(itemId) && isEmailVerified() && 
+                    exists(/databases/$(database)/documents/users/$(userId)) &&
+                    isValidHistory(incoming());
+                    
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(itemId) && isEmailVerified() &&
+                    exists(/databases/$(database)/documents/users/$(userId)) &&
+                    isValidHistory(incoming()) &&
+                    incoming().id == existing().id && // Immortal Field
+                    incoming().timestamp == existing().timestamp; // Immortal Field
+                    
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(itemId) &&
+                    exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    // Rules for User saved sequences
+    match /users/{userId}/sequences/{seqId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(seqId);
+    }
+
+    // Rules for User saved movie projects (Cinema Studio)
+    match /users/{userId}/movie_projects/{movieId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(movieId);
+    }
+
+    // Rules for Shared Sequences (Public Read, safe immutable creation)
+    match /shared_sequences/{shareId} {
+      allow get: if isValidId(shareId);
+      allow list: if false;
+      allow create: if isValidId(shareId) && 
+                    incoming().id == shareId &&
+                    incoming().title is string && incoming().title.size() <= 256 &&
+                    incoming().scenes is list && incoming().scenes.size() <= 50;
+      allow update, delete: if false;
+    }
+  }
+}
+
