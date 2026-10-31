@@ -1,247 +1,177 @@
 
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 const base = '/ArabPromptdawAi/';
 
-export default defineConfig(() => {
-  return {
-    base,
+const rootDir = path.dirname(
+  fileURLToPath(import.meta.url)
+);
 
-    plugins: [
-      react(),
-      tailwindcss(),
+export default defineConfig(() => ({
+  base,
 
-      VitePWA({
-        registerType: 'autoUpdate',
+  plugins: [
+    react(),
+    tailwindcss(),
 
-        includeAssets: [
-          'favicon.ico',
-          'favicon.png',
-          'apple-touch-icon.png',
-          'icon.svg',
+    VitePWA({
+      registerType: 'autoUpdate',
+      injectRegister: 'auto',
+
+      manifestFilename: 'manifest.webmanifest',
+
+      manifest: {
+        id: base,
+
+        name: 'Arabiprompt AI Studio',
+        short_name: 'Arabiprompt',
+
+        description:
+          'منصة عربية احترافية لهندسة الأوامر وإنشاء برومبتات الصور والفيديو',
+
+        lang: 'ar',
+        dir: 'rtl',
+
+        theme_color: '#000000',
+        background_color: '#ffffff',
+
+        display: 'standalone',
+        orientation: 'portrait-primary',
+
+        start_url: base,
+        scope: base,
+
+        categories: [
+          'productivity',
+          'education',
+          'graphics',
+          'utilities',
         ],
 
-        manifestFilename: 'manifest.webmanifest',
+        icons: [
+          {
+            src: `${base}icons/icon-192x192.png`,
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: `${base}icons/icon-512x512.png`,
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: `${base}icons/icon-maskable-512x512.png`,
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
 
-        manifest: {
-          id: base,
-          name: 'Arabiprompt AI Studio',
-          short_name: 'Arabiprompt',
-          description:
-            'منصتك الذكية لإنشاء الصور والفيديوهات بالذكاء الاصطناعي وهندسة الأوامر الرقمية',
+      workbox: {
+        maximumFileSizeToCacheInBytes:
+          5 * 1024 * 1024,
 
-          lang: 'ar',
-          dir: 'rtl',
-          theme_color: '#000000',
-          background_color: '#ffffff',
-          display: 'standalone',
-          orientation: 'portrait-primary',
+        globPatterns: [
+          '**/*.{js,css,html,ico,png,jpg,jpeg,webp,svg,woff,woff2}',
+        ],
 
-          start_url: base,
-          scope: base,
+        navigateFallback: `${base}index.html`,
 
-          categories: [
-            'business',
-            'education',
-            'entertainment',
-            'graphics',
-            'productivity',
-            'utilities',
-          ],
+        navigateFallbackDenylist: [
+          /^\/api\//,
+        ],
 
-          display_override: [
-            'browser',
-            'minimal-ui',
-            'fullscreen',
-            'window-controls-overlay',
-            'standalone',
-          ],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
 
-          icons: [
-            {
-              src: `${base}icons/icon-192x192.png`,
-              sizes: '192x192',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: `${base}icons/icon-512x512.png`,
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: `${base}icons/icon-maskable-512x512.png`,
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
-            },
-            {
-              src: `${base}pwa-192x192.png`,
-              sizes: '192x192',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: `${base}pwa-512x512.png`,
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: `${base}pwa-maskable-512x512.png`,
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
-            },
-          ],
+        runtimeCaching: [
+          {
+            urlPattern:
+              /^https:\/\/fonts\.googleapis\.com\/.*/i,
 
-          screenshots: [
-            {
-              src: `${base}icons/screenshot-mobile.png`,
-              sizes: '1080x1920',
-              type: 'image/png',
-              form_factor: 'narrow',
-              label: 'Arabiprompt Mobile App',
-            },
-            {
-              src: `${base}icons/screenshot-desktop.png`,
-              sizes: '1920x1080',
-              type: 'image/png',
-              form_factor: 'wide',
-              label: 'Arabiprompt Studio Workspace',
-            },
-          ],
-        },
+            handler: 'StaleWhileRevalidate',
 
-        workbox: {
-          maximumFileSizeToCacheInBytes:
-            5 * 1024 * 1024,
+            options: {
+              cacheName: 'google-fonts-stylesheets',
 
-          globPatterns: [
-            '**/*.{js,css,html,ico,png,svg,woff,woff2}',
-          ],
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 31536000,
+              },
 
-          navigateFallback: `${base}index.html`,
-
-          runtimeCaching: [
-            {
-              urlPattern:
-                /^https:\/\/fonts\.googleapis\.com\/.*/i,
-
-              handler: 'CacheFirst',
-
-              options: {
-                cacheName: 'google-fonts-cache',
-
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds:
-                    60 * 60 * 24 * 365,
-                },
-
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
+              cacheableResponse: {
+                statuses: [0, 200],
               },
             },
-            {
-              urlPattern:
-                /^https:\/\/fonts\.gstatic\.com\/.*/i,
+          },
 
-              handler: 'CacheFirst',
+          {
+            urlPattern:
+              /^https:\/\/fonts\.gstatic\.com\/.*/i,
 
-              options: {
-                cacheName: 'gstatic-fonts-cache',
+            handler: 'CacheFirst',
 
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds:
-                    60 * 60 * 24 * 365,
-                },
+            options: {
+              cacheName: 'google-fonts-webfonts',
 
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 31536000,
+              },
+
+              cacheableResponse: {
+                statuses: [0, 200],
               },
             },
-          ],
-        },
+          },
+        ],
+      },
 
-        devOptions: {
-          enabled: false,
-        },
-      }),
+      devOptions: {
+        enabled: false,
+      },
+    }),
+  ],
+
+  resolve: {
+    dedupe: [
+      'react',
+      'react-dom',
     ],
 
-    resolve: {
-      dedupe: ['react', 'react-dom'],
-
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
+    alias: {
+      '@': rootDir,
     },
+  },
 
-    optimizeDeps: {
-      include: [
-        'react',
-        'react-dom',
-        'react-dom/client',
-      ],
-    },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-dom/client',
+    ],
+  },
 
-    build: {
-      target: 'esnext',
-      cssMinify: true,
-      minify: 'esbuild',
+  build: {
+    target: 'esnext',
 
-      rollupOptions: {
-        output: {
-          manualChunks: (id) => {
-            if (
-              id.includes('node_modules/react') ||
-              id.includes('node_modules/react-dom')
-            ) {
-              return 'vendor-react';
-            }
+    cssMinify: true,
+    minify: 'esbuild',
 
-            if (id.includes('node_modules/firebase')) {
-              return 'vendor-firebase';
-            }
+    chunkSizeWarningLimit: 800,
+  },
 
-            if (
-              id.includes('node_modules/prismjs') ||
-              id.includes('node_modules/react-markdown')
-            ) {
-              return 'vendor-syntax';
-            }
-
-            if (id.includes('node_modules/motion')) {
-              return 'vendor-motion';
-            }
-
-            if (id.includes('node_modules/lucide-react')) {
-              return 'vendor-lucide';
-            }
-          },
-        },
-      },
-
-      chunkSizeWarningLimit: 800,
-    },
-
-    server: {
-      // Preserve Google AI Studio HMR behavior.
-      hmr: process.env.DISABLE_HMR !== 'true',
-
-      watch:
-        process.env.DISABLE_HMR === 'true'
-          ? null
-          : {},
-    },
-  };
-});
+  server: {
+    hmr:
+      process.env.DISABLE_HMR !== 'true',
+  },
+}));
