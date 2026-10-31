@@ -1,28 +1,44 @@
-import {StrictMode} from 'react';
-import {createRoot} from 'react-dom/client';
+
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-// Register the PWA Service Worker in production only, and unregister in development to avoid chunk cache mismatch
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+
+// GitHub Pages / Vite base path
+const baseUrl = import.meta.env.BASE_URL;
+
+// Register PWA Service Worker in production
+if (
+  typeof window !== 'undefined' &&
+  'serviceWorker' in navigator
+) {
   if (import.meta.env.PROD) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('/sw.js')
+        .register(`${baseUrl}sw.js`)
         .then((registration) => {
-          console.log('[PWA] Service Worker registered successfully with scope:', registration.scope);
+          console.log(
+            '[PWA] Service Worker registered:',
+            registration.scope
+          );
         })
         .catch((error) => {
-          console.error('[PWA] Service Worker registration failed:', error);
+          console.error(
+            '[PWA] Service Worker registration failed:',
+            error
+          );
         });
     });
   } else {
-    // In development mode, unregister any active service worker and clear stale caches
-    // to prevent mismatched React chunks and corrupted dependency caching
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      for (const registration of registrations) {
-        registration.unregister();
-      }
-    });
+    // Clean up Service Workers during development
+    navigator.serviceWorker
+      .getRegistrations()
+      .then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      });
+
     if ('caches' in window) {
       caches.keys().then((keys) => {
         for (const key of keys) {
@@ -33,8 +49,17 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
   }
 }
 
-createRoot(document.getElementById('root')!).render(
+// Mount React application
+const rootElement = document.getElementById('root');
+
+if (!rootElement) {
+  throw new Error(
+    'React root element #root was not found.'
+  );
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <App />
-  </StrictMode>,
+  </StrictMode>
 );
