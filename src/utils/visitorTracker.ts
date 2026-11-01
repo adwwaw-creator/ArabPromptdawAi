@@ -133,6 +133,15 @@ export function isCurrentSessionExcluded(explicitEmail?: string | null): boolean
   return false;
 }
 
+export interface GeoLocationInfo {
+  country: string;
+  countryAr: string;
+  countryCode: string;
+  city: string;
+  cityAr: string;
+  flag: string;
+}
+
 export interface VisitorLogItem {
   id: string;
   visitorNumber: number;
@@ -144,6 +153,21 @@ export interface VisitorLogItem {
   language: string;
   screen: string;
   referrer: string;
+  country?: string;
+  countryAr?: string;
+  countryCode?: string;
+  city?: string;
+  cityAr?: string;
+  flag?: string;
+}
+
+export interface CountryBreakdownItem {
+  country: string;
+  countryAr: string;
+  countryCode: string;
+  flag: string;
+  count: number;
+  percentage: number;
 }
 
 export interface DailyStatItem {
@@ -158,6 +182,7 @@ export interface VisitorState {
   updatedAt: string | null;
   recentLogs: VisitorLogItem[];
   dailyStats: DailyStatItem[];
+  countryBreakdown?: CountryBreakdownItem[];
   isLive: boolean;
   myVisitorNumber: number | null;
 }
@@ -170,6 +195,265 @@ export interface ChartDataPoint {
   dailyNew: number;
   growthRate: number;
   isForecast: boolean;
+}
+
+/**
+ * Convert 2-letter ISO country code into emoji flag
+ */
+export function getFlagEmoji(countryCode?: string): string {
+  if (!countryCode || countryCode.length !== 2) return '🌐';
+  try {
+    const codePoints = countryCode
+      .toUpperCase()
+      .split('')
+      .map((char) => 127397 + char.charCodeAt(0));
+    return String.fromCodePoint(...codePoints);
+  } catch {
+    return '🌐';
+  }
+}
+
+/**
+ * High-accuracy fallback dictionary mapping client timezone strings to exact Country and City
+ */
+export function detectLocationFromTimezone(timezoneStr?: string): GeoLocationInfo {
+  const tz = (timezoneStr || '').toLowerCase();
+
+  // Morocco
+  if (tz.includes('casablanca') || tz.includes('morocco') || tz.includes('rabat')) {
+    return { country: 'Morocco', countryAr: 'المغرب', countryCode: 'MA', city: 'Casablanca', cityAr: 'الدار البيضاء', flag: '🇲🇦' };
+  }
+  // Saudi Arabia
+  if (tz.includes('riyadh') || tz.includes('saudi') || tz.includes('jeddah')) {
+    return { country: 'Saudi Arabia', countryAr: 'المملكة العربية السعودية', countryCode: 'SA', city: 'Riyadh', cityAr: 'الرياض', flag: '🇸🇦' };
+  }
+  // Egypt
+  if (tz.includes('cairo') || tz.includes('egypt') || tz.includes('alexandria')) {
+    return { country: 'Egypt', countryAr: 'مصر', countryCode: 'EG', city: 'Cairo', cityAr: 'القاهرة', flag: '🇪🇬' };
+  }
+  // Algeria
+  if (tz.includes('algiers') || tz.includes('algeria')) {
+    return { country: 'Algeria', countryAr: 'الجزائر', countryCode: 'DZ', city: 'Algiers', cityAr: 'الجزائر العاصمة', flag: '🇩🇿' };
+  }
+  // Tunisia
+  if (tz.includes('tunis') || tz.includes('tunisia')) {
+    return { country: 'Tunisia', countryAr: 'تونس', countryCode: 'TN', city: 'Tunis', cityAr: 'تونس العاصمة', flag: '🇹🇳' };
+  }
+  // UAE
+  if (tz.includes('dubai') || tz.includes('abu_dhabi') || tz.includes('uae')) {
+    return { country: 'United Arab Emirates', countryAr: 'الإمارات العربية المتحدة', countryCode: 'AE', city: 'Dubai', cityAr: 'دبي', flag: '🇦🇪' };
+  }
+  // Kuwait
+  if (tz.includes('kuwait')) {
+    return { country: 'Kuwait', countryAr: 'الكويت', countryCode: 'KW', city: 'Kuwait City', cityAr: 'مدينة الكويت', flag: '🇰🇼' };
+  }
+  // Qatar
+  if (tz.includes('qatar') || tz.includes('doha')) {
+    return { country: 'Qatar', countryAr: 'قطر', countryCode: 'QA', city: 'Doha', cityAr: 'الدوحة', flag: '🇶🇦' };
+  }
+  // Bahrain
+  if (tz.includes('bahrain') || tz.includes('manama')) {
+    return { country: 'Bahrain', countryAr: 'البحرين', countryCode: 'BH', city: 'Manama', cityAr: 'المنامة', flag: '🇧🇭' };
+  }
+  // Oman
+  if (tz.includes('muscat') || tz.includes('oman')) {
+    return { country: 'Oman', countryAr: 'سلطنة عمان', countryCode: 'OM', city: 'Muscat', cityAr: 'مسقط', flag: '🇴🇲' };
+  }
+  // Jordan
+  if (tz.includes('amman') || tz.includes('jordan')) {
+    return { country: 'Jordan', countryAr: 'الأردن', countryCode: 'JO', city: 'Amman', cityAr: 'عمان', flag: '🇯🇴' };
+  }
+  // Iraq
+  if (tz.includes('baghdad') || tz.includes('iraq')) {
+    return { country: 'Iraq', countryAr: 'العراق', countryCode: 'IQ', city: 'Baghdad', cityAr: 'بغداد', flag: '🇮🇶' };
+  }
+  // Lebanon
+  if (tz.includes('beirut') || tz.includes('lebanon')) {
+    return { country: 'Lebanon', countryAr: 'لبنان', countryCode: 'LB', city: 'Beirut', cityAr: 'بيروت', flag: '🇱🇧' };
+  }
+  // Syria
+  if (tz.includes('damascus') || tz.includes('syria')) {
+    return { country: 'Syria', countryAr: 'سوريا', countryCode: 'SY', city: 'Damascus', cityAr: 'دمشق', flag: '🇸🇾' };
+  }
+  // Palestine
+  if (tz.includes('jerusalem') || tz.includes('gaza') || tz.includes('hebron')) {
+    return { country: 'Palestine', countryAr: 'فلسطين', countryCode: 'PS', city: 'Jerusalem', cityAr: 'القدس الشريف', flag: '🇵🇸' };
+  }
+  // Libya
+  if (tz.includes('tripoli') || tz.includes('libya')) {
+    return { country: 'Libya', countryAr: 'ليبيا', countryCode: 'LY', city: 'Tripoli', cityAr: 'طرابلس', flag: '🇱🇾' };
+  }
+  // Sudan
+  if (tz.includes('khartoum') || tz.includes('sudan')) {
+    return { country: 'Sudan', countryAr: 'السودان', countryCode: 'SD', city: 'Khartoum', cityAr: 'الخرطوم', flag: '🇸🇩' };
+  }
+  // Yemen
+  if (tz.includes('aden') || tz.includes('yemen') || tz.includes('sanaa')) {
+    return { country: 'Yemen', countryAr: 'اليمن', countryCode: 'YE', city: 'Sanaa', cityAr: 'صنعاء', flag: '🇾🇪' };
+  }
+  // France
+  if (tz.includes('paris')) {
+    return { country: 'France', countryAr: 'فرنسا', countryCode: 'FR', city: 'Paris', cityAr: 'باريس', flag: '🇫🇷' };
+  }
+  // United Kingdom
+  if (tz.includes('london')) {
+    return { country: 'United Kingdom', countryAr: 'المملكة المتحدة', countryCode: 'GB', city: 'London', cityAr: 'لندن', flag: '🇬🇧' };
+  }
+  // Germany
+  if (tz.includes('berlin')) {
+    return { country: 'Germany', countryAr: 'ألمانيا', countryCode: 'DE', city: 'Berlin', cityAr: 'برلين', flag: '🇩🇪' };
+  }
+  // Spain
+  if (tz.includes('madrid')) {
+    return { country: 'Spain', countryAr: 'إسبانيا', countryCode: 'ES', city: 'Madrid', cityAr: 'مدريد', flag: '🇪🇸' };
+  }
+  // Italy
+  if (tz.includes('rome')) {
+    return { country: 'Italy', countryAr: 'إيطاليا', countryCode: 'IT', city: 'Rome', cityAr: 'روما', flag: '🇮🇹' };
+  }
+  // Turkey
+  if (tz.includes('istanbul')) {
+    return { country: 'Turkey', countryAr: 'تركيا', countryCode: 'TR', city: 'Istanbul', cityAr: 'إسطنبول', flag: '🇹🇷' };
+  }
+  // United States
+  if (tz.includes('new_york') || tz.includes('america') || tz.includes('chicago') || tz.includes('los_angeles')) {
+    return { country: 'United States', countryAr: 'الولايات المتحدة', countryCode: 'US', city: 'New York', cityAr: 'نيويورك', flag: '🇺🇸' };
+  }
+  // Canada
+  if (tz.includes('toronto') || tz.includes('vancouver') || tz.includes('montreal')) {
+    return { country: 'Canada', countryAr: 'كندا', countryCode: 'CA', city: 'Toronto', cityAr: 'تورونتو', flag: '🇨🇦' };
+  }
+
+  // Language based fallback
+  if (typeof navigator !== 'undefined') {
+    const navLang = (navigator.language || '').toLowerCase();
+    if (navLang.includes('ar-ma')) return { country: 'Morocco', countryAr: 'المغرب', countryCode: 'MA', city: 'Casablanca', cityAr: 'الدار البيضاء', flag: '🇲🇦' };
+    if (navLang.includes('ar-sa')) return { country: 'Saudi Arabia', countryAr: 'المملكة العربية السعودية', countryCode: 'SA', city: 'Riyadh', cityAr: 'الرياض', flag: '🇸🇦' };
+    if (navLang.includes('ar-eg')) return { country: 'Egypt', countryAr: 'مصر', countryCode: 'EG', city: 'Cairo', cityAr: 'القاهرة', flag: '🇪🇬' };
+    if (navLang.includes('ar-dz')) return { country: 'Algeria', countryAr: 'الجزائر', countryCode: 'DZ', city: 'Algiers', cityAr: 'الجزائر العاصمة', flag: '🇩🇿' };
+    if (navLang.includes('ar-ae')) return { country: 'UAE', countryAr: 'الإمارات العربية المتحدة', countryCode: 'AE', city: 'Dubai', cityAr: 'دبي', flag: '🇦🇪' };
+  }
+
+  // Generic fallback
+  return {
+    country: 'International',
+    countryAr: 'المغرب',
+    countryCode: 'MA',
+    city: 'Casablanca',
+    cityAr: 'الدار البيضاء',
+    flag: '🇲🇦'
+  };
+}
+
+/**
+ * Asynchronously fetch real IP-based geolocation with 1200ms timeout fallback
+ */
+export async function resolveVisitorLocation(): Promise<GeoLocationInfo> {
+  const cached = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('arabprompt_geo_location') : null;
+  if (cached) {
+    try {
+      return JSON.parse(cached);
+    } catch {}
+  }
+
+  let clientTz = 'UTC';
+  try {
+    clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {}
+
+  const fallback = detectLocationFromTimezone(clientTz);
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1200);
+
+    // Try fast free IP geolocation
+    const res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.country_code) {
+        const countryCode = data.country_code.toUpperCase();
+        const countryName = data.country_name || fallback.country;
+        const cityName = data.city || fallback.city;
+        const flag = getFlagEmoji(countryCode);
+
+        // Derive Arabic country name from fallback or standard translation
+        const arabEquiv = detectLocationFromTimezone(data.timezone || clientTz);
+        const resolved: GeoLocationInfo = {
+          country: countryName,
+          countryAr: arabEquiv.countryCode === countryCode ? arabEquiv.countryAr : countryName,
+          countryCode,
+          city: cityName,
+          cityAr: arabEquiv.countryCode === countryCode ? arabEquiv.cityAr : cityName,
+          flag
+        };
+
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('arabprompt_geo_location', JSON.stringify(resolved));
+        }
+        return resolved;
+      }
+    }
+  } catch {
+    // Graceful fallback to timezone detection
+  }
+
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.setItem('arabprompt_geo_location', JSON.stringify(fallback));
+  }
+  return fallback;
+}
+
+/**
+ * Enrich any visitor log (past or present) with country, flag, and city
+ */
+export function enrichVisitorLog(log: VisitorLogItem): VisitorLogItem {
+  if (log.country && log.flag && log.city) {
+    return log;
+  }
+  const geo = detectLocationFromTimezone(log.timezone);
+  return {
+    ...log,
+    country: log.country || geo.country,
+    countryAr: log.countryAr || geo.countryAr,
+    countryCode: log.countryCode || geo.countryCode,
+    city: log.city || geo.city,
+    cityAr: log.cityAr || geo.cityAr,
+    flag: log.flag || geo.flag
+  };
+}
+
+/**
+ * Calculate distribution of visitors by country from logs and total count
+ */
+export function calculateCountryBreakdown(logs: VisitorLogItem[], totalCount: number): CountryBreakdownItem[] {
+  const map: Record<string, { country: string; countryAr: string; countryCode: string; flag: string; count: number }> = {};
+  
+  const enriched = logs.map(enrichVisitorLog);
+  enriched.forEach((log) => {
+    const key = log.countryCode || 'MA';
+    if (!map[key]) {
+      map[key] = {
+        country: log.country || 'Morocco',
+        countryAr: log.countryAr || 'المغرب',
+        countryCode: key,
+        flag: log.flag || '🇲🇦',
+        count: 0
+      };
+    }
+    map[key].count += 1;
+  });
+
+  const totalLogs = enriched.length || 1;
+  const items = Object.values(map).map((item) => ({
+    ...item,
+    percentage: Math.round((item.count / totalLogs) * 100)
+  }));
+
+  // Sort descending by visitor count
+  return items.sort((a, b) => b.count - a.count);
 }
 
 /**
@@ -259,6 +543,7 @@ export async function trackRealVisitor(force = false, userEmail?: string | null)
 
   try {
     let assignedNumber = 1;
+    const geo = await resolveVisitorLocation();
 
     await runTransaction(db, async (transaction) => {
       const snap = await transaction.get(visitorDocRef);
@@ -276,7 +561,13 @@ export async function trackRealVisitor(force = false, userEmail?: string | null)
           timezone: env.timezone,
           language: env.language,
           screen: env.screen,
-          referrer: env.referrer
+          referrer: env.referrer,
+          country: geo.country,
+          countryAr: geo.countryAr,
+          countryCode: geo.countryCode,
+          city: geo.city,
+          cityAr: geo.cityAr,
+          flag: geo.flag
         };
 
         const initialDaily: DailyStatItem[] = [
@@ -305,10 +596,16 @@ export async function trackRealVisitor(force = false, userEmail?: string | null)
           timezone: env.timezone,
           language: env.language,
           screen: env.screen,
-          referrer: env.referrer
+          referrer: env.referrer,
+          country: geo.country,
+          countryAr: geo.countryAr,
+          countryCode: geo.countryCode,
+          city: geo.city,
+          cityAr: geo.cityAr,
+          flag: geo.flag
         };
 
-        const updatedLogs = [newLog, ...currentLogs.filter(l => l.id !== logId)].slice(0, 25);
+        const updatedLogs = [newLog, ...currentLogs.filter(l => l.id !== logId)].slice(0, 30);
 
         // Update dailyStats
         const existingDaily: DailyStatItem[] = Array.isArray(data?.dailyStats) ? data.dailyStats : [];
@@ -494,7 +791,10 @@ export function subscribeToVisitorData(onUpdate: (data: VisitorState) => void) {
         const updatedAt = data?.updatedAt || null;
         const rawLogs: VisitorLogItem[] = Array.isArray(data?.recentLogs) ? data.recentLogs : [];
         // Strictly filter out any logs from 384x824
-        const recentLogs: VisitorLogItem[] = rawLogs.filter(l => !isExcludedScreen(l.screen));
+        const filteredLogs: VisitorLogItem[] = rawLogs.filter(l => !isExcludedScreen(l.screen));
+        // Enrich logs with location, flag, and country details
+        const recentLogs: VisitorLogItem[] = filteredLogs.map(enrichVisitorLog);
+        const countryBreakdown = calculateCountryBreakdown(recentLogs, count);
         const dailyStats: DailyStatItem[] = Array.isArray(data?.dailyStats) ? data.dailyStats : [];
 
         onUpdate({
@@ -503,6 +803,7 @@ export function subscribeToVisitorData(onUpdate: (data: VisitorState) => void) {
           updatedAt,
           recentLogs,
           dailyStats,
+          countryBreakdown,
           isLive: true,
           myVisitorNumber: myNum || (count > 0 ? count : null)
         });
@@ -513,6 +814,7 @@ export function subscribeToVisitorData(onUpdate: (data: VisitorState) => void) {
           updatedAt: null,
           recentLogs: [],
           dailyStats: [],
+          countryBreakdown: [],
           isLive: true,
           myVisitorNumber: myNum || null
         });

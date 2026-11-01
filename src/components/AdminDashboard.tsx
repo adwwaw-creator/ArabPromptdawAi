@@ -29,7 +29,9 @@ import {
   Copy,
   Check,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Globe,
+  MapPin
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -54,6 +56,7 @@ import {
   PlatformAdminStats,
   RegisteredUserProfile
 } from '../utils/firestoreService';
+import { enrichVisitorLog } from '../utils/visitorTracker';
 import { showToast } from './ToastNotification';
 
 const ADMIN_EMAILS = ['adwwaw@gmail.com', 'adouaourachid@gmail.com'];
@@ -183,6 +186,106 @@ export default function AdminDashboard({
       document.body.removeChild(link);
     } catch (e) {
       console.error('Export CSV error:', e);
+    }
+  };
+
+  // Export Visitor Activity Logs & Location Metrics CSV
+  const handleExportVisitorLogsCSV = () => {
+    if (!stats) return;
+    try {
+      const logs = stats.visitorLogs || [];
+      const countryMetrics = stats.countryBreakdown || [];
+
+      const lines: string[] = [];
+
+      // Section 1: Executive Metadata & Metrics Summary
+      lines.push('"=== PLATFORM VISITOR ACTIVITY & LOCATION METRICS REPORT ==="');
+      lines.push(`"Report_Generated_At","${new Date().toISOString()}"`);
+      lines.push(`"Total_Verified_Visitors","${stats.visitorCount || 0}"`);
+      lines.push(`"Currently_Online_Active","${stats.activeOnline || 1}"`);
+      lines.push(`"Total_Activity_Entries","${logs.length}"`);
+      lines.push(`"Countries_Represented","${countryMetrics.length}"`);
+      lines.push('');
+
+      // Section 2: Geographic Location Metrics Table
+      lines.push('"=== GEOGRAPHIC LOCATION METRICS BREAKDOWN ==="');
+      lines.push('"Country_Code","Country_Name","Country_Arabic","Flag","Visitor_Count","Share_Percentage"');
+      if (countryMetrics.length > 0) {
+        countryMetrics.forEach((cm) => {
+          lines.push(
+            `"${cm.countryCode}","${cm.country}","${cm.countryAr}","${cm.flag}","${cm.count}","${cm.percentage}%"`
+          );
+        });
+      } else {
+        lines.push('"N/A","No Country Data Recorded Yet","لا توجد بيانات دول مسجلة","🌐","0","0%"');
+      }
+      lines.push('');
+
+      // Section 3: Detailed Visitor Activity Log Stream
+      lines.push('"=== DETAILED VISITOR ACTIVITY LOGS ==="');
+      lines.push(
+        '"Visitor_Number","Timestamp","Date","Time","Country","Country_Arabic","Country_Code","City","City_Arabic","Flag","Device","OS","Browser","Screen_Resolution","Timezone","Referrer"'
+      );
+
+      if (logs.length > 0) {
+        logs.forEach((log) => {
+          const enriched = enrichVisitorLog(log);
+          const dateObj = new Date(enriched.timestamp);
+          const dateStr = !isNaN(dateObj.getTime()) ? dateObj.toISOString().split('T')[0] : '';
+          const timeStr = !isNaN(dateObj.getTime()) ? dateObj.toLocaleTimeString('en-US', { hour12: false }) : '';
+
+          lines.push(
+            [
+              `"${enriched.visitorNumber}"`,
+              `"${enriched.timestamp}"`,
+              `"${dateStr}"`,
+              `"${timeStr}"`,
+              `"${enriched.country || ''}"`,
+              `"${enriched.countryAr || ''}"`,
+              `"${enriched.countryCode || ''}"`,
+              `"${enriched.city || ''}"`,
+              `"${enriched.cityAr || ''}"`,
+              `"${enriched.flag || ''}"`,
+              `"${enriched.device || ''}"`,
+              `"${enriched.os || ''}"`,
+              `"${enriched.browser || ''}"`,
+              `"${enriched.screen || ''}"`,
+              `"${enriched.timezone || ''}"`,
+              `"${(enriched.referrer || '').replace(/"/g, '""')}"`
+            ].join(',')
+          );
+        });
+      } else {
+        lines.push('"0","","","","","","","","","","","","","","",""');
+      }
+
+      const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + lines.join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute(
+        'download',
+        `visitor_activity_and_locations_${new Date().toISOString().substring(0, 10)}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast({
+        title: lang === 'ar' ? 'تم تصدير سجل الزوار والمواقع' : 'Visitor Activity Exported',
+        message:
+          lang === 'ar'
+            ? `تم تصدير ${logs.length} سجل زيارة و ${countryMetrics.length} دولة بنجاح`
+            : `Exported ${logs.length} visitor logs & ${countryMetrics.length} countries successfully`,
+        type: 'info'
+      });
+    } catch (e) {
+      console.error('Export visitor CSV error:', e);
+      showToast({
+        title: lang === 'ar' ? 'تعذر التصدير' : 'Export Failed',
+        message: lang === 'ar' ? 'حدث خطأ أثناء تصدير ملف CSV' : 'An error occurred during export',
+        type: 'error'
+      });
     }
   };
 
@@ -329,7 +432,17 @@ export default function AdminDashboard({
             title={lang === 'ar' ? 'تصدير جدول المستخدمين بصيغة CSV' : 'Export users to CSV'}
           >
             <Download className="w-3.5 h-3.5" />
-            <span>{lang === 'ar' ? 'تصدير CSV' : 'Export CSV'}</span>
+            <span>{lang === 'ar' ? 'تصدير المستخدمين CSV' : 'Export Users CSV'}</span>
+          </button>
+
+          <button
+            onClick={handleExportVisitorLogsCSV}
+            disabled={!stats}
+            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title={lang === 'ar' ? 'تصدير سجل نشاط الزوار وأماكنهم الجغرافية كملف CSV' : 'Export visitor activity logs & location metrics as CSV'}
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>{lang === 'ar' ? 'تصدير الزوار والمواقع CSV' : 'Export Visitors & Locations CSV'}</span>
           </button>
 
           <a
@@ -461,7 +574,14 @@ export default function AdminDashboard({
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span>{stats?.activeOnline || 1} {lang === 'ar' ? 'نشط الآن' : 'online now'}</span>
             </span>
-            <span className="text-stone-400">{formatRelativeTime(lastUpdated.toISOString())}</span>
+            <button
+              onClick={handleExportVisitorLogsCSV}
+              className="font-bold text-[#8c6a1e] dark:text-amber-400 hover:text-[#6f5316] flex items-center gap-1 cursor-pointer transition-colors"
+              title={lang === 'ar' ? 'تنزيل سجل الزوار والمواقع بصيغة CSV' : 'Download visitor activity & location CSV'}
+            >
+              <Download className="w-3 h-3" />
+              <span>{lang === 'ar' ? 'تنزيل CSV' : 'CSV'}</span>
+            </button>
           </div>
         </div>
 
@@ -992,59 +1112,190 @@ export default function AdminDashboard({
         </div>
       )}
 
-      {/* VIEW 3: Daily Activity Stream & Logs */}
+      {/* VIEW 3: Daily Activity Stream, Visitor Logs & Location Metrics */}
       {activeTab === 'activity' && (
-        <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 shadow-sm space-y-5 animate-in fade-in duration-200">
+        <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 shadow-sm space-y-6 animate-in fade-in duration-200">
           
-          <div className="flex items-center justify-between">
+          {/* Section Header with Export Button */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-stone-100 dark:border-stone-800">
             <div>
-              <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
                 <Activity className="w-4 h-4 text-emerald-500" />
-                <span>{lang === 'ar' ? 'سجل النشاط اليومي وتوليد الأوامر' : 'Daily Activity Stream'}</span>
+                <span>{lang === 'ar' ? 'سجل النشاط وحركة الزوار والمقاييس الجغرافية' : 'Platform Activity, Visitor Logs & Location Metrics'}</span>
               </h3>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                {lang === 'ar' ? 'توثيق حركة المنصة اليومية ومعدل استهلاك الذكاء الاصطناعي' : 'Tracking daily traffic and prompt generation load'}
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
+                {lang === 'ar'
+                  ? 'توثيق دقيق لحركة الزوار، مواقعهم الجغرافية، الدول، والنشاط اليومي مع إمكانية التصدير الفوري'
+                  : 'Comprehensive tracking of visitor traffic, geographical locations, countries, and daily load'}
               </p>
             </div>
-            <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20 font-bold">
-              {stats?.activeOnline || 1} {lang === 'ar' ? 'متصلون الآن' : 'online now'}
-            </span>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1.5 rounded-xl border border-emerald-500/20 font-bold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{stats?.activeOnline || 1} {lang === 'ar' ? 'متصلون الآن' : 'online now'}</span>
+              </span>
+
+              {/* Dedicated CSV Export Button */}
+              <button
+                onClick={handleExportVisitorLogsCSV}
+                disabled={!stats}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                title={lang === 'ar' ? 'تنزيل سجل نشاط الزوار والمواقع كملف CSV' : 'Download visitor activity & location metrics as CSV'}
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>{lang === 'ar' ? 'تصدير الزوار والمواقع CSV' : 'Export Visitor Logs CSV'}</span>
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {stats?.dailyActivity && stats.dailyActivity.length > 0 ? (
-              stats.dailyActivity.map((day) => (
-                <div
-                  key={day.date}
-                  className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/80 space-y-2"
-                >
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-[#c29b40]" />
-                      <span>{day.date}</span>
-                    </span>
-                    <span className="text-[10px] text-stone-400">
-                      {formatDate(day.date)}
-                    </span>
-                  </div>
+          {/* Section A: Geographic Location Metrics (توزيع الزوار حسب البلد والمكان) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold flex items-center gap-1.5 text-stone-800 dark:text-stone-200">
+                <Globe className="w-4 h-4 text-[#c29b40]" />
+                <span>{lang === 'ar' ? 'المقاييس الجغرافية وتوزيع الزوار حسب الدولة:' : 'Geographic Location Metrics by Country:'}</span>
+              </span>
+              <span className="text-[11px] text-stone-400">
+                {stats?.countryBreakdown?.length || 0} {lang === 'ar' ? 'دولة مسجلة' : 'countries detected'}
+              </span>
+            </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-stone-200/60 dark:border-stone-700/60 text-xs">
-                    <div>
-                      <span className="text-[10px] text-stone-400 block">{lang === 'ar' ? 'الزيارات:' : 'Visits:'}</span>
-                      <span className="font-black font-mono text-stone-900 dark:text-stone-100 text-sm">{day.visits}</span>
+            {stats?.countryBreakdown && stats.countryBreakdown.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                {stats.countryBreakdown.map((item) => (
+                  <div
+                    key={item.countryCode}
+                    className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/80 space-y-2 text-xs hover:border-[#c29b40]/50 transition-all"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 font-bold text-stone-900 dark:text-stone-100 truncate">
+                        <span className="text-base">{item.flag}</span>
+                        <span className="truncate">{lang === 'ar' ? item.countryAr : item.country}</span>
+                      </span>
+                      <span className="font-mono font-black text-[#8c6a1e] dark:text-amber-400">
+                        {item.count}
+                      </span>
                     </div>
-                    <div>
-                      <span className="text-[10px] text-emerald-500 block">{lang === 'ar' ? 'عمليات التوليد:' : 'Generations:'}</span>
-                      <span className="font-black font-mono text-emerald-600 dark:text-emerald-400 text-sm">{day.generations}</span>
+
+                    <div className="w-full bg-stone-200 dark:bg-stone-700 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-[#c29b40] to-amber-500 h-1.5 rounded-full"
+                        style={{ width: `${Math.max(10, item.percentage)}%` }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-stone-400">
+                      <span>{item.countryCode}</span>
+                      <span className="font-mono">{item.percentage}%</span>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             ) : (
-              <div className="col-span-full p-8 text-center text-stone-400 text-xs">
-                {lang === 'ar' ? 'بانتظار تسجيل أول نشاط يومي...' : 'Waiting for daily activity logs...'}
+              <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/40 text-center text-xs text-stone-400">
+                {lang === 'ar' ? 'لا توجد مقاييس مواقع جغرافية مسجلة حالياً.' : 'No geographical metrics recorded yet.'}
               </div>
             )}
+          </div>
+
+          {/* Section B: Detailed Visitor Activity Log Stream (سجل أرقام الزوار وأماكنهم) */}
+          <div className="space-y-3 pt-2 border-t border-stone-100 dark:border-stone-800">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold flex items-center gap-1.5 text-stone-800 dark:text-stone-200">
+                <MapPin className="w-4 h-4 text-emerald-500" />
+                <span>{lang === 'ar' ? 'سجل لحظات دخول الزوار وتفاصيل الأماكن:' : 'Live Visitor Entry Stream & Locations:'}</span>
+              </span>
+              <span className="text-[11px] text-stone-400">
+                {stats?.visitorLogs?.length || 0} {lang === 'ar' ? 'عملية دخول مسجلة' : 'logged entries'}
+              </span>
+            </div>
+
+            {stats?.visitorLogs && stats.visitorLogs.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1 scrollbar-thin">
+                {stats.visitorLogs.map((log) => {
+                  const enriched = enrichVisitorLog(log);
+                  return (
+                    <div
+                      key={enriched.id}
+                      className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/80 space-y-2 text-xs hover:border-emerald-500/40 transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-black text-[#8c6a1e] dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-[#c29b40]/25">
+                          {lang === 'ar' ? `الزائر #${enriched.visitorNumber}` : `Visitor #${enriched.visitorNumber}`}
+                        </span>
+                        <span className="text-[10px] text-stone-400 font-mono">
+                          {enriched.timestamp ? new Date(enriched.timestamp).toLocaleTimeString('en-US', { hour12: false }) : ''}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-white dark:bg-stone-850 border border-stone-200/60 dark:border-stone-700/60 text-[11px] font-semibold text-stone-800 dark:text-stone-100">
+                        <span className="text-base">{enriched.flag || '🌐'}</span>
+                        <span className="truncate">
+                          {lang === 'ar' ? (enriched.countryAr || enriched.country) : enriched.country}
+                          {enriched.city && <span className="text-stone-400 font-normal"> · {enriched.city}</span>}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[10px] text-stone-500 dark:text-stone-400 pt-1 border-t border-stone-200/50 dark:border-stone-700/50">
+                        <span className="truncate max-w-[130px]">
+                          {enriched.os} · {enriched.browser}
+                        </span>
+                        <span className="font-mono">{enriched.screen}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/40 text-center text-xs text-stone-400">
+                {lang === 'ar' ? 'بانتظار تسجيل دخول أول زائر لعرض السجل اللحظي...' : 'Waiting for first visitor activity...'}
+              </div>
+            )}
+          </div>
+
+          {/* Section C: Daily Activity & Prompt Generation Load */}
+          <div className="space-y-3 pt-2 border-t border-stone-100 dark:border-stone-800">
+            <h4 className="text-xs font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-[#c29b40]" />
+              <span>{lang === 'ar' ? 'النشاط اليومي ومعدل استهلاك التوليد:' : 'Daily Activity & Generation Load:'}</span>
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {stats?.dailyActivity && stats.dailyActivity.length > 0 ? (
+                stats.dailyActivity.map((day) => (
+                  <div
+                    key={day.date}
+                    className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/80 space-y-2"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-[#c29b40]" />
+                        <span>{day.date}</span>
+                      </span>
+                      <span className="text-[10px] text-stone-400">
+                        {formatDate(day.date)}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-stone-200/60 dark:border-stone-700/60 text-xs">
+                      <div>
+                        <span className="text-[10px] text-stone-400 block">{lang === 'ar' ? 'الزيارات:' : 'Visits:'}</span>
+                        <span className="font-black font-mono text-stone-900 dark:text-stone-100 text-sm">{day.visits}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-emerald-500 block">{lang === 'ar' ? 'عمليات التوليد:' : 'Generations:'}</span>
+                        <span className="font-black font-mono text-emerald-600 dark:text-emerald-400 text-sm">{day.generations}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full p-6 text-center text-stone-400 text-xs">
+                  {lang === 'ar' ? 'بانتظار تسجيل أول نشاط يومي...' : 'Waiting for daily activity logs...'}
+                </div>
+              )}
+            </div>
           </div>
 
         </div>

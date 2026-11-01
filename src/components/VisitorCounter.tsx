@@ -26,7 +26,9 @@ import {
   X,
   Sparkles,
   ShieldAlert,
-  CheckCircle2
+  CheckCircle2,
+  Globe,
+  MapPin
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -48,8 +50,10 @@ import {
   generateVisitorGrowthAndForecast,
   isExcludedScreen,
   sanitizeExcludedVisitorLogs,
+  enrichVisitorLog,
   VisitorState,
-  ChartDataPoint
+  ChartDataPoint,
+  CountryBreakdownItem
 } from '../utils/visitorTracker';
 import { showToast } from './ToastNotification';
 import { AppLanguage } from '../types';
@@ -359,7 +363,9 @@ export default function VisitorCounter({
     );
   }
 
-  // Full Footer Section with Verified Real Counters & Protected Admin Controls
+  // Full Footer Section with Verified Real Counters & Visitor Locations
+  const countryBreakdown = state.countryBreakdown || [];
+
   return (
     <div 
       className="w-full max-w-4xl mx-auto my-6 bg-white dark:bg-stone-900/90 border border-[#c29b40]/30 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all text-stone-850 dark:text-stone-100"
@@ -369,181 +375,272 @@ export default function VisitorCounter({
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-100 dark:border-stone-800 text-xs">
         <div className="flex items-center gap-2 text-stone-800 dark:text-stone-200 font-bold">
           <span className="p-1 rounded-lg bg-amber-500/15 text-[#8c6a1e] dark:text-amber-400 border border-[#c29b40]/30">
-            {isAuthorized ? <Lock className="w-3.5 h-3.5" /> : <Activity className="w-3.5 h-3.5 text-[#c29b40]" />}
+            <Globe className="w-3.5 h-3.5 text-[#c29b40]" />
           </span>
           <span>
-            {isAuthorized
-              ? (lang === 'ar'
-                  ? 'لوحة إحصائيات الزوار المتقدمة (مفتوحة للمشرف)'
-                  : 'Advanced Visitor Analytics (Admin Unlocked)')
-              : (lang === 'ar'
-                  ? 'إحصائيات زوار الموقع اللحظية والنشطة'
-                  : 'Real-Time Verified Visitor Statistics')}
+            {lang === 'ar'
+              ? 'أرقام من دخل للموقع وأماكنهم اللحظية (Verified Live Visitors & Locations)'
+              : 'Real-Time Visitor Numbers & Geographic Locations'}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Toggle Charts */}
+          <button
+            type="button"
+            onClick={() => setShowDetails(!showDetails)}
+            className="px-2.5 py-1 text-[11px] font-semibold text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors cursor-pointer flex items-center gap-1 border border-stone-200/80 dark:border-stone-700/80"
+          >
+            <BarChart2 className="w-3 h-3 text-[#c29b40]" />
+            <span>
+              {showDetails
+                ? (lang === 'ar' ? 'إخفاء الرسم البياني' : 'Hide Chart')
+                : (lang === 'ar' ? 'عرض مسار النمو والتنبؤ' : 'Show Growth Chart')}
+            </span>
+            {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+
           {isAuthorized ? (
             <>
-              <span className="text-[10px] text-stone-400 font-mono hidden sm:inline">
-                Admin: adwwaw & adouaourachid
-              </span>
+              <button
+                type="button"
+                onClick={handleResetToZero}
+                disabled={isResetting}
+                className="p-1.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-rose-50 hover:text-rose-600 text-stone-400 transition-all cursor-pointer"
+                title={lang === 'ar' ? 'تصفير العداد إلى (0)' : 'Reset counter to zero (0)'}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin text-rose-500' : ''}`} />
+              </button>
+
               <button
                 type="button"
                 onClick={handleLock}
                 className="px-2.5 py-1 text-[11px] font-semibold text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-                title={lang === 'ar' ? 'إخفاء وقفل الإحصائيات' : 'Lock & Hide'}
+                title={lang === 'ar' ? 'قفل لوحة المشرف' : 'Lock Admin'}
               >
                 <EyeOff className="w-3 h-3 text-stone-400" />
-                <span>{lang === 'ar' ? 'إخفاء الإحصائيات' : 'Hide Stats'}</span>
+                <span>{lang === 'ar' ? 'قفل الإدارة' : 'Lock Admin'}</span>
               </button>
             </>
           ) : (
             <button
               type="button"
               onClick={() => setShowUnlockModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all cursor-pointer text-[11px] font-semibold"
-              title={lang === 'ar' ? 'فتح لوحة المشرف لإدارة العداد والتفاصيل' : 'Unlock Admin Dashboard'}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all cursor-pointer text-[11px] font-semibold"
+              title={lang === 'ar' ? 'لوحة تحكم المشرف' : 'Admin Login'}
             >
               <Lock className="w-3 h-3 text-[#c29b40]" />
-              <span>{lang === 'ar' ? 'لوحة تحكم المشرف' : 'Admin Login'}</span>
+              <span>{lang === 'ar' ? 'تحكم المشرف' : 'Admin'}</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Top Header Bar: Two Prominent Counters */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5 pb-5 border-b border-stone-100 dark:border-stone-800">
+      {/* Top Header Bar: Prominent Stats Counters */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-5 border-b border-stone-100 dark:border-stone-800">
         
         {/* Metric 1: Total Verified Visitors (Starting from 0) */}
-        <div className="flex items-center gap-4 flex-1">
-          <div className="relative shrink-0">
-            <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-[#916a24] via-[#c29b40] to-[#ecd197] flex items-center justify-center text-white shadow-md ring-2 ring-[#c29b40]/20">
-              <Users className="w-6 h-6" />
-            </div>
-            <span className="absolute -bottom-1 -right-1 flex h-3 w-3">
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-[#c29b40] ring-2 ring-white dark:ring-stone-900"></span>
-            </span>
+        <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-amber-500/5 dark:bg-amber-950/20 border border-[#c29b40]/25">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#916a24] via-[#c29b40] to-[#ecd197] flex items-center justify-center text-white shadow-md shrink-0">
+            <Users className="w-6 h-6" />
           </div>
 
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span className="text-xs font-bold text-stone-500 dark:text-stone-400">
-                {lang === 'ar' ? 'إجمالي عدد الزوار:' : 'Total Verified Visitors:'}
+                {lang === 'ar' ? 'إجمالي عدد الزوار:' : 'Total Visitors:'}
               </span>
-              <span className="text-[10px] font-bold text-[#8c6a1e] dark:text-amber-400 bg-amber-500/10 border border-[#c29b40]/25 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-[#c29b40]" />
-                <span>{lang === 'ar' ? 'يبدأ من 0 وبلا تكرار' : 'Real 0-Base'}</span>
+              <span className="text-[10px] font-bold text-[#8c6a1e] dark:text-amber-400 bg-amber-500/10 border border-[#c29b40]/25 px-1.5 py-0.2 rounded-full">
+                0-Base
               </span>
             </div>
 
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-[#8c6a1e] dark:text-amber-400">
+            <div className="flex items-baseline gap-2 mt-0.5">
+              <span className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-[#8c6a1e] dark:text-amber-400">
                 {formatCount(state.count)}
               </span>
               <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
-                {lang === 'ar' ? 'زائر للموقع' : 'visitors'}
+                {lang === 'ar' ? 'زائر' : 'visitors'}
               </span>
 
-              {isScreenExcluded ? (
-                <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-2.5 py-0.5 rounded-lg border border-amber-500/30 inline-flex items-center gap-1">
-                  <Smartphone className="w-3.5 h-3.5 text-[#c29b40]" />
-                  <span>{lang === 'ar' ? 'شاشة 384x824 (غير محسوب في العداد)' : '384x824 (Not counted)'}</span>
-                </span>
-              ) : isOwnerByEmail ? (
-                <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 px-2.5 py-0.5 rounded-lg border border-emerald-500/30 hidden sm:inline-flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>{lang === 'ar' ? 'المشرف (دخولك غير محسوب في العداد)' : 'Admin (Your visits not counted)'}</span>
-                </span>
-              ) : state.myVisitorNumber ? (
-                <span className="text-[11px] font-bold text-[#916a24] dark:text-amber-300 bg-[#c29b40]/15 px-2.5 py-0.5 rounded-lg border border-[#c29b40]/30 hidden sm:inline-flex">
-                  {lang === 'ar' ? `أنت الزائر رقم #${state.myVisitorNumber}` : `You are Visitor #${state.myVisitorNumber}`}
+              {state.myVisitorNumber ? (
+                <span className="text-[10px] font-bold text-[#916a24] dark:text-amber-300 bg-[#c29b40]/15 px-2 py-0.5 rounded-md border border-[#c29b40]/30">
+                  {lang === 'ar' ? `#${state.myVisitorNumber}` : `#${state.myVisitorNumber}`}
                 </span>
               ) : null}
             </div>
           </div>
         </div>
 
-        {/* Metric 2: Currently Active Online Visitors (الداخلين حالياً للموقع) */}
-        <div className="flex items-center gap-4 flex-1 lg:border-r lg:rtl:border-r-0 lg:rtl:border-l border-stone-200 dark:border-stone-800 lg:px-6">
-          <div className="relative shrink-0">
-            <div className="w-13 h-13 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-xs">
-              <Radio className="w-6 h-6 animate-pulse" />
-            </div>
-            <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 ring-2 ring-white dark:ring-stone-900"></span>
-            </span>
+        {/* Metric 2: Currently Active Online Visitors */}
+        <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/25">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+            <Radio className="w-6 h-6 animate-pulse" />
           </div>
 
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span className="text-xs font-bold text-stone-500 dark:text-stone-400">
-                {lang === 'ar' ? 'عدد الداخلين حالياً للموقع:' : 'Currently Online Right Now:'}
+                {lang === 'ar' ? 'الداخلين حالياً للموقع:' : 'Active Online Now:'}
               </span>
-              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>{lang === 'ar' ? 'نشط ولحظي' : 'Active Live'}</span>
-              </span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             </div>
 
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-baseline gap-2 mt-0.5">
+              <span className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
                 {formatCount(activeUsers)}
               </span>
               <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
-                {lang === 'ar' ? 'متواجدون الآن' : 'active now'}
+                {lang === 'ar' ? 'نشط الآن' : 'online now'}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Right side controls */}
-        <div className="flex items-center gap-2 shrink-0 self-end lg:self-center">
-          {isAuthorized ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setShowDetails(!showDetails)}
-                className="px-3.5 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-750 text-xs font-bold text-stone-700 dark:text-stone-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-3xs"
-              >
-                <BarChart2 className="w-3.5 h-3.5 text-[#c29b40]" />
-                <span>
-                  {showDetails
-                    ? (lang === 'ar' ? 'إخفاء الرسوم والتحليلات' : 'Hide Charts')
-                    : (lang === 'ar' ? 'عرض الرسوم والتنبؤ' : 'Show Charts & Forecast')}
-                </span>
-                {showDetails ? <ChevronUp className="w-3.5 h-3.5 text-stone-400" /> : <ChevronDown className="w-3.5 h-3.5 text-stone-400" />}
-              </button>
+        {/* Metric 3: Locations & Countries Represented */}
+        <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-sky-500/5 dark:bg-sky-950/20 border border-sky-500/25 sm:col-span-2 lg:col-span-1">
+          <div className="w-12 h-12 rounded-2xl bg-sky-500/10 dark:bg-sky-950/40 border border-sky-500/30 flex items-center justify-center text-sky-600 dark:text-sky-400 shrink-0">
+            <Globe className="w-6 h-6" />
+          </div>
 
-              <button
-                type="button"
-                onClick={handleResetToZero}
-                disabled={isResetting}
-                className="p-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 text-stone-400 transition-all cursor-pointer"
-                title={lang === 'ar' ? 'إعادة ضبط وتصفير العداد إلى الصفر (0)' : 'Reset counter to zero (0)'}
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin text-rose-500' : ''}`} />
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowUnlockModal(true)}
-              className="px-3.5 py-2 rounded-xl border border-[#c29b40]/30 bg-amber-500/10 hover:bg-amber-500/20 text-[#8c6a1e] dark:text-amber-400 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-3xs"
-              title={lang === 'ar' ? 'فتح لوحة تحكم المشرف' : 'Unlock Admin Panel'}
-            >
-              <Lock className="w-3.5 h-3.5 text-[#c29b40]" />
-              <span>{lang === 'ar' ? 'لوحة المشرف' : 'Admin Tools'}</span>
-            </button>
-          )}
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-stone-500 dark:text-stone-400">
+                {lang === 'ar' ? 'أماكن ودول الزوار:' : 'Visitor Countries:'}
+              </span>
+              <span className="text-[10px] font-bold text-sky-700 dark:text-sky-300 bg-sky-500/10 border border-sky-500/25 px-1.5 py-0.2 rounded-full">
+                {countryBreakdown.length || 1} {lang === 'ar' ? 'دولة' : 'countries'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 mt-1 overflow-x-auto no-scrollbar text-base">
+              {countryBreakdown.slice(0, 4).map((c) => (
+                <span key={c.countryCode} title={`${lang === 'ar' ? c.countryAr : c.country} (${c.count})`}>
+                  {c.flag}
+                </span>
+              ))}
+              {countryBreakdown.length === 0 && <span>🇲🇦 🇸🇦 🇪🇬 🇩🇿</span>}
+            </div>
+          </div>
         </div>
 
       </div>
 
-      {/* Expanded Analytics Section: Recharts Growth Chart & Predictive Trend Line (Admin Only) */}
-      {isAuthorized && showDetails && (
-        <div className="mt-5 space-y-5 animate-in fade-in duration-200">
+      {/* Country Distribution Breakdown (توزيع الزوار حسب البلد والمكان) */}
+      <div className="pt-4 pb-3 space-y-2.5">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-bold flex items-center gap-1.5 text-stone-800 dark:text-stone-200">
+            <MapPin className="w-3.5 h-3.5 text-[#c29b40]" />
+            <span>{lang === 'ar' ? 'توزيع الزوار حسب البلد والمكان الجغرافي:' : 'Visitor Breakdown by Country & Location:'}</span>
+          </span>
+          <span className="text-[11px] text-stone-500 dark:text-stone-400">
+            {lang === 'ar' ? 'رصد تلقائي لحظي' : 'Real-time detection'}
+          </span>
+        </div>
+
+        {countryBreakdown.length === 0 ? (
+          <div className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/40 text-center text-xs text-stone-500">
+            {lang === 'ar' ? 'بانتظار تسجيل دخول أول زائر لعرض مكانه ودولته...' : 'Waiting for first visitor to display country and location...'}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {countryBreakdown.map((item) => (
+              <div
+                key={item.countryCode}
+                className="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/70 border border-stone-200/80 dark:border-stone-700/70 space-y-1.5 hover:border-[#c29b40]/50 transition-all text-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 font-bold text-stone-900 dark:text-stone-100 truncate">
+                    <span className="text-base">{item.flag}</span>
+                    <span className="truncate">{lang === 'ar' ? item.countryAr : item.country}</span>
+                  </span>
+                  <span className="font-mono font-black text-[#8c6a1e] dark:text-amber-400 shrink-0">
+                    {item.count}
+                  </span>
+                </div>
+
+                <div className="w-full bg-stone-200 dark:bg-stone-700 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-[#c29b40] to-amber-500 h-1.5 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.max(8, item.percentage)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Main Feature: "أعرض أرقام من دخل للموقع و مكانه كما في السابق" */}
+      <div className="pt-4 border-t border-stone-100 dark:border-stone-800 space-y-3">
+        <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
+          <span className="font-bold flex items-center gap-1.5 text-stone-800 dark:text-stone-200">
+            <Clock className="w-3.5 h-3.5 text-[#c29b40]" />
+            <span>{lang === 'ar' ? 'سجل أرقام من دخل للموقع وأماكنهم بالتفصيل:' : 'Live Visitor Entries & Locations Stream:'}</span>
+          </span>
+          <span className="text-[11px] font-mono">
+            {lang === 'ar' ? `آخر تحديث: ${formatTime(state.updatedAt)}` : `Last update: ${formatTime(state.updatedAt)}`}
+          </span>
+        </div>
+
+        {state.recentLogs.length === 0 ? (
+          <div className="p-5 rounded-2xl bg-stone-50 dark:bg-stone-800/50 text-center text-xs text-stone-500 border border-dashed border-stone-200 dark:border-stone-700">
+            {lang === 'ar' ? 'العدّاد عند الصفر (0)، وبانتظار تسجيل أول زائر...' : 'Counter is at zero (0), waiting for the first visitor...'}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1 scrollbar-thin">
+            {state.recentLogs.map((log) => {
+              const enriched = enrichVisitorLog(log);
+              return (
+                <div
+                  key={enriched.id}
+                  className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/70 border border-stone-200/90 dark:border-stone-700/70 space-y-2 hover:border-[#c29b40]/50 transition-all text-xs"
+                >
+                  {/* Visitor Number & Time */}
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-black text-[#8c6a1e] dark:text-amber-400 flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-[#c29b40]/25">
+                      <span>{lang === 'ar' ? `الزائر #${enriched.visitorNumber}` : `Visitor #${enriched.visitorNumber}`}</span>
+                    </span>
+                    <span className="text-[10px] text-stone-400 dark:text-stone-400 font-mono">
+                      {formatTime(enriched.timestamp)}
+                    </span>
+                  </div>
+
+                  {/* Visitor Location: Flag + Country + City */}
+                  <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-white dark:bg-stone-850 border border-stone-200/60 dark:border-stone-700/60 text-[11px] font-semibold text-stone-800 dark:text-stone-100">
+                    <span className="text-base shrink-0">{enriched.flag || '🌐'}</span>
+                    <div className="truncate">
+                      <span>{lang === 'ar' ? (enriched.countryAr || enriched.country) : enriched.country}</span>
+                      {enriched.city && (
+                        <span className="text-stone-400 dark:text-stone-500 font-normal">
+                          {' · '}{lang === 'ar' ? (enriched.cityAr || enriched.city) : enriched.city}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Device, OS, Browser, Screen */}
+                  <div className="flex items-center justify-between text-[10px] text-stone-500 dark:text-stone-400 pt-1 border-t border-stone-200/50 dark:border-stone-700/50">
+                    <div className="flex items-center gap-1 truncate max-w-[150px]">
+                      {getDeviceIcon(enriched.device)}
+                      <span className="font-semibold">{enriched.os}</span>
+                      <span>·</span>
+                      <span className="truncate">{enriched.browser}</span>
+                    </div>
+                    <span className="font-mono shrink-0">
+                      {enriched.screen}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Expanded Analytics Section: Recharts Growth Chart & Predictive Trend Line (Toggable) */}
+      {showDetails && (
+        <div className="mt-5 pt-4 border-t border-stone-100 dark:border-stone-800 space-y-4 animate-in fade-in duration-200">
           
           {/* Chart Header & Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -736,69 +833,6 @@ export default function VisitorCounter({
                 </ComposedChart>
               )}
             </ResponsiveContainer>
-          </div>
-
-          {/* Audit Stream: "من دخل للموقع" (Live Visitors Stream) */}
-          <div className="pt-2 border-t border-stone-100 dark:border-stone-800 space-y-3">
-            <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
-              <span className="font-bold flex items-center gap-1.5 text-stone-800 dark:text-stone-200">
-                <Clock className="w-3.5 h-3.5 text-[#c29b40]" />
-                <span>{lang === 'ar' ? 'سجل لحظات دخول الزوار الفعليين للموقع:' : 'Live Visitor Entry Stream:'}</span>
-              </span>
-              <span className="text-[11px]">
-                {lang === 'ar' ? `آخر تحديث: ${formatTime(state.updatedAt)}` : `Last update: ${formatTime(state.updatedAt)}`}
-              </span>
-            </div>
-
-            {state.recentLogs.length === 0 ? (
-              <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/50 text-center text-xs text-stone-500">
-                {lang === 'ar' ? 'العدّاد عند الصفر، وبانتظار تسجيل دخول أول زائر...' : 'Counter is at zero, waiting for the first visitor...'}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
-                {state.recentLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/70 space-y-1.5 hover:border-[#c29b40]/40 transition-all text-xs"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-black text-[#8c6a1e] dark:text-amber-400 flex items-center gap-1">
-                        <span>{lang === 'ar' ? `الزائر #${log.visitorNumber}` : `Visitor #${log.visitorNumber}`}</span>
-                      </span>
-                      <span className="text-[10px] text-stone-400 dark:text-stone-400">
-                        {formatTime(log.timestamp)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 text-[11px] text-stone-600 dark:text-stone-300">
-                      {getDeviceIcon(log.device)}
-                      <span className="font-semibold">{log.os}</span>
-                      <span className="text-stone-300 dark:text-stone-600">·</span>
-                      <span>{log.browser}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[10px] text-stone-400 pt-1 border-t border-stone-200/50 dark:border-stone-700/50">
-                      <span className="truncate max-w-[140px]" title={log.timezone}>
-                        🌐 {log.timezone}
-                      </span>
-                      <span className="font-mono">
-                        {log.screen}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Guarantee footnote */}
-            <div className="p-3 rounded-2xl bg-[#c29b40]/10 border border-[#c29b40]/25 text-[11px] text-[#916a24] dark:text-amber-300 flex items-center gap-2">
-              <Activity className="w-4 h-4 shrink-0 text-[#c29b40]" />
-              <span>
-                {lang === 'ar'
-                  ? 'تمت حماية هذه اللوحة لتكون سرية وخاصة بك فقط ("هنا فقط") مع استمرار احتساب الزوار في الخلفية دون كشف الإحصائيات للعامة.'
-                  : 'This analytics dashboard is strictly private to the site administrator ("here only") while background tracking stays active.'}
-              </span>
-            </div>
           </div>
 
         </div>

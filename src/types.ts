@@ -47,7 +47,7 @@ export interface PromptHistoryItem {
   tags?: string[];
 }
 
-export type ActiveTab = 'dawai' | 'builder' | 'library' | 'templates' | 'cinema' | 'visual_library' | 'ideas' | 'reverse' | 'sequence' | 'drone' | 'diffusiondb' | 'history' | 'privacy' | 'admin';
+export type ActiveTab = 'dawai' | 'builder' | 'dashboard' | 'library' | 'templates' | 'cinema' | 'visual_library' | 'ideas' | 'reverse' | 'sequence' | 'drone' | 'diffusiondb' | 'history' | 'privacy' | 'admin';
 export type TemplatePlaceholder = PromptTemplatePlaceholder;
 
 export interface Category {

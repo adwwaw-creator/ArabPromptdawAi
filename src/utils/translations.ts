@@ -20,6 +20,7 @@ export interface TranslationDictionary {
   navDrone: string;
   navDiffusionDB: string;
   navHistory: string;
+  navDashboard: string;
   navPrivacy: string;
   navPricing: string;
   navTemplates: string;
@@ -120,6 +121,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     navDrone: 'تصميم أوامر الفيديو',
     navDiffusionDB: 'قاعدة بيانات الانتشار',
     navHistory: 'سجل الأوامر',
+    navDashboard: 'لوحة البيانات التحليلية',
     navPrivacy: 'التكاليف والخصوصية',
     navPricing: 'الأسعار والباقات',
     navTemplates: 'قوالب الأوامر',
@@ -213,6 +215,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     navDrone: 'Video Designer',
     navDiffusionDB: 'DiffusionDB',
     navHistory: 'History',
+    navDashboard: 'Analytics Dashboard',
     navPrivacy: 'Costs & Privacy',
     navPricing: 'Pricing & Plans',
     navTemplates: 'Prompt Templates',
@@ -306,6 +309,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     navDrone: 'Concepteur Vidéo',
     navDiffusionDB: 'DiffusionDB',
     navHistory: 'Historique',
+    navDashboard: 'Tableau de bord',
     navPrivacy: 'Confidentialité & Sécurité',
     navPricing: 'Tarifs & Abonnements',
     navTemplates: 'Modèles de Prompts',
@@ -399,6 +403,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     navDrone: 'Diseñador de Video',
     navDiffusionDB: 'DiffusionDB',
     navHistory: 'Historial',
+    navDashboard: 'Panel analítico',
     navPrivacy: 'Privacidad y Seguridad',
     navPricing: 'Precios y Planes',
     navTemplates: 'Plantillas de Prompts',
@@ -492,6 +497,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     navDrone: 'Video-Designer',
     navDiffusionDB: 'DiffusionDB',
     navHistory: 'Verlauf',
+    navDashboard: 'Analyse-Dashboard',
     navPrivacy: 'Datenschutz & Sicherheit',
     navPricing: 'Preise & Tarife',
     navTemplates: 'Prompt-Vorlagen',
@@ -585,6 +591,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     navDrone: 'Video Tasarımcısı',
     navDiffusionDB: 'DiffusionDB',
     navHistory: 'Geçmiş',
+    navDashboard: 'Analitik Paneli',
     navPrivacy: 'Gizlilik ve Güvenlik',
     navPricing: 'Fiyatlandırma & Paketler',
     navTemplates: 'Prompt Şablonları',
@@ -678,6 +685,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     navDrone: '映像・ドローン設計',
     navDiffusionDB: 'DiffusionDB',
     navHistory: '履歴',
+    navDashboard: '分析ダッシュボード',
     navPrivacy: 'プライバシーと安全性',
     navPricing: '料金プラン',
     navTemplates: 'プロンプトテンプレート',
@@ -771,6 +779,7 @@ export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
     navDrone: '运镜视频设计',
     navDiffusionDB: 'DiffusionDB数据库',
     navHistory: '提示词历史',
+    navDashboard: '数据分析仪表板',
     navPrivacy: '隐私与安全中心',
     navPricing: '价格与方案',
     navTemplates: '提示词模板',

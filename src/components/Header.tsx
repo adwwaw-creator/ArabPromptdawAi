@@ -174,6 +174,7 @@ export default function Header({
   const menuItems = [
     { id: 'dawai' as ActiveTab, label: t.navDawai, icon: Sparkles },
     { id: 'builder' as ActiveTab, label: t.navBuilder, icon: PenTool },
+    { id: 'dashboard' as ActiveTab, label: t.navDashboard, icon: BarChart3 },
     { id: 'library' as ActiveTab, label: t.navPromptLibrary, icon: BookOpen },
     { id: 'templates' as ActiveTab, label: t.navTemplates, icon: LayoutTemplate },
     { id: 'reverse' as ActiveTab, label: t.navReverse, icon: Image },
@@ -261,6 +262,13 @@ export default function Header({
             <span className="flex flex-col items-center leading-[1.1]">
               <span>قاعدة بيانات</span>
               <span>الانتشار</span>
+            </span>
+          );
+        case 'dashboard':
+          return (
+            <span className="flex flex-col items-center leading-[1.1]">
+              <span>لوحة</span>
+              <span>التحليلات</span>
             </span>
           );
         case 'history':

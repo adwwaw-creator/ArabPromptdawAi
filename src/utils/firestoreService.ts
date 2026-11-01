@@ -18,6 +18,13 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebaseAuth';
 import { PromptHistoryItem, SavedSequence, MovieProject, SharedSequenceData } from '../types';
+import {
+  VisitorLogItem,
+  CountryBreakdownItem,
+  enrichVisitorLog,
+  calculateCountryBreakdown,
+  isExcludedScreen
+} from './visitorTracker';
 
 export enum OperationType {
   CREATE = 'create',
@@ -661,6 +668,8 @@ export interface PlatformAdminStats {
   activeOnline: number;
   dailyActivity: { date: string; visits: number; generations: number }[];
   users: RegisteredUserProfile[];
+  visitorLogs?: VisitorLogItem[];
+  countryBreakdown?: CountryBreakdownItem[];
 }
 
 /**
@@ -704,12 +713,19 @@ export async function getPlatformAdminStats(): Promise<PlatformAdminStats> {
   let visitorCount = 0;
   let activeOnline = 1;
   let dailyActivity: { date: string; visits: number; generations: number }[] = [];
+  let visitorLogs: VisitorLogItem[] = [];
+  let countryBreakdown: CountryBreakdownItem[] = [];
 
   try {
     const visDoc = await getDoc(doc(db, 'visitors', 'global'));
     if (visDoc.exists()) {
       const data = visDoc.data();
       visitorCount = data.count || 0;
+      const rawLogs: VisitorLogItem[] = Array.isArray(data.recentLogs) ? data.recentLogs : [];
+      const filteredLogs = rawLogs.filter((l: any) => !isExcludedScreen(l.screen));
+      visitorLogs = filteredLogs.map(enrichVisitorLog);
+      countryBreakdown = calculateCountryBreakdown(visitorLogs, visitorCount);
+
       if (Array.isArray(data.dailyStats) && data.dailyStats.length > 0) {
         dailyActivity = data.dailyStats.map((item: any) => ({
           date: item.date,
@@ -746,7 +762,9 @@ export async function getPlatformAdminStats(): Promise<PlatformAdminStats> {
     visitorCount,
     activeOnline,
     dailyActivity,
-    users
+    users,
+    visitorLogs,
+    countryBreakdown
   };
 }
 

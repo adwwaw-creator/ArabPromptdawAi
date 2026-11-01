@@ -22,8 +22,10 @@ import PromptTemplates from './components/PromptTemplates';
 import PromptLibrary from './components/PromptLibrary';
 import DawAiPortal from './components/DawAiPortal';
 import VisualConceptLibrary from './components/VisualConceptLibrary';
+import { UserAnalyticsDashboard } from './components/UserAnalyticsDashboard';
 import AuthModal, { AuthMode } from './components/AuthModal';
 import { getSubscription, UserSubscription, SubscriptionPlan, recordGenerationUsage, isPaidSubscriber } from './utils/subscriptionService';
+import { recordAnalyticsEvent } from './utils/userAnalyticsService';
 import { BackupMetadata, getBackupConfig, saveBackupConfig, searchGDriveBackup, uploadGDriveBackup, uploadDropboxBackup, backupToDropboxSimulated, backupToICloudSimulated, backupToCustomBackendSimulated } from './utils/cloudBackup';
 import { ActiveTab, PromptHistoryItem, ModelType, AppLanguage, SUPPORTED_LANGUAGES, AppFontSize } from './types';
 import { ToastNotification, showToast } from './components/ToastNotification';
@@ -628,6 +630,11 @@ export default function App() {
 
     // Increment daily plan usage
     recordGenerationUsage(currentUser?.uid);
+
+    // Record interactive user analytics event
+    const wordsCount = (item.optimizedText || item.originalText || '').split(/\s+/).filter(Boolean).length || 20;
+    const featType = item.actionType === 'reverse' ? 'reverse' : (item.category === 'cinema' ? 'cinema' : 'builder');
+    recordAnalyticsEvent(featType, item.category, item.model, wordsCount, item.actionType || 'generate');
   };
 
   const handleClearHistory = () => {
@@ -969,6 +976,18 @@ export default function App() {
             onNavigateToLibrary={() => setActiveTab('library')}
             onLogPrompt={handleLogPrompt}
             initialValues={builderInitialValues}
+          />
+        )}
+
+        {activeTab === 'dashboard' && (
+          <UserAnalyticsDashboard
+            lang={lang}
+            history={history}
+            onNavigateTab={(tab) => {
+              setActiveTab(tab);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onSendToTester={handleSendToTester}
           />
         )}
 
