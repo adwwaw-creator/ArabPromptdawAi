@@ -17,6 +17,7 @@ import { BackupMetadata } from '../utils/cloudBackup';
 import { User } from 'firebase/auth';
 import { UserSubscription, SubscriptionPlan, getUsageStats, UsageStats } from '../utils/subscriptionService';
 import { InstallPrompt } from './InstallPrompt';
+import VisitorCounter from './VisitorCounter';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -385,6 +386,11 @@ export default function Header({
           {/* Utilities Panel */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             
+            {/* Live Visitor Counter Badge */}
+            <div className="hidden md:flex items-center">
+              <VisitorCounter lang={lang} variant="badge" currentUser={user} onOpenAuth={onOpenAuth} />
+            </div>
+
             {/* API Status Indicator */}
             <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-stone-200/80 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 text-[11px] font-medium text-stone-600 dark:text-stone-300">
               {apiOnline === null ? (

@@ -20,6 +20,72 @@ export const EXCLUDED_ADMIN_EMAILS = [
 ];
 
 /**
+ * Excluded device resolutions.
+ * Specifically screen resolution 384x824 (and 824x384 in landscape).
+ * Requirement: "لا تقم بحساب 384x824"
+ */
+export const EXCLUDED_SCREENS = [
+  '384x824',
+  '824x384'
+];
+
+/**
+ * Checks if the given screen resolution string or current browser window/screen matches 384x824.
+ * When detected, immediately persists a flag in localStorage to ensure persistent exclusion for the client.
+ */
+export function isExcludedScreen(screenStr?: string): boolean {
+  if (screenStr) {
+    const s = screenStr.toLowerCase().trim();
+    if (
+      EXCLUDED_SCREENS.includes(s) ||
+      s === '384x824' ||
+      s === '824x384' ||
+      s.includes('384x824') ||
+      s.includes('824x384')
+    ) {
+      return true;
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      if (localStorage.getItem('arabprompt_exclude_screen_384x824') === 'true') {
+        return true;
+      }
+    } catch {}
+
+    const sw = window.screen?.width;
+    const sh = window.screen?.height;
+    if ((sw === 384 && sh === 824) || (sw === 824 && sh === 384)) {
+      try {
+        localStorage.setItem('arabprompt_exclude_screen_384x824', 'true');
+      } catch {}
+      return true;
+    }
+
+    const iw = window.innerWidth;
+    const ih = window.innerHeight;
+    if ((iw === 384 && ih === 824) || (iw === 824 && ih === 384)) {
+      try {
+        localStorage.setItem('arabprompt_exclude_screen_384x824', 'true');
+      } catch {}
+      return true;
+    }
+
+    const aw = window.screen?.availWidth;
+    const ah = window.screen?.availHeight;
+    if ((aw === 384 && ah === 824) || (aw === 824 && ah === 384)) {
+      try {
+        localStorage.setItem('arabprompt_exclude_screen_384x824', 'true');
+      } catch {}
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Checks if a given email is one of the excluded admin accounts
  */
 export function isExcludedEmail(email?: string | null): boolean {
@@ -28,10 +94,16 @@ export function isExcludedEmail(email?: string | null): boolean {
 }
 
 /**
- * Checks if the current session belongs to an excluded admin email (via parameter, localStorage, or auth)
- * Ensures that logins/visits by adwwaw@gmail.com and adouaourachid@gmail.com are NEVER counted as visitors or active users.
+ * Checks if the current session belongs to an excluded screen resolution (384x824) or admin email.
+ * Ensures that visits from 384x824, adwwaw@gmail.com, and adouaourachid@gmail.com are NEVER counted as visitors or active users.
  */
 export function isCurrentSessionExcluded(explicitEmail?: string | null): boolean {
+  // 1. Strict screen resolution exclusion (384x824)
+  if (isExcludedScreen()) {
+    return true;
+  }
+
+  // 2. Strict admin email exclusions
   if (isExcludedEmail(explicitEmail)) return true;
   try {
     if (typeof window !== 'undefined') {
@@ -156,8 +228,13 @@ function getOrCreateSessionId(): string {
 export async function trackRealVisitor(force = false, userEmail?: string | null): Promise<number | null> {
   if (typeof window === 'undefined') return null;
 
-  // Never count visits or logins from registered admin emails (Adwwaw@gmail.com & adouaourachid@gmail.com)
-  if (isCurrentSessionExcluded(userEmail)) {
+  // Never count visits or logins from screen resolution 384x824 or registered admin emails
+  if (isExcludedScreen() || isCurrentSessionExcluded(userEmail)) {
+    return null;
+  }
+
+  const env = getClientEnvironment();
+  if (isExcludedScreen(env.screen)) {
     return null;
   }
 
@@ -177,7 +254,6 @@ export async function trackRealVisitor(force = false, userEmail?: string | null)
   }
 
   const visitorDocRef = doc(db, 'visitors', 'global');
-  const env = getClientEnvironment();
   const logId = `v_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -274,18 +350,23 @@ export async function trackRealVisitor(force = false, userEmail?: string | null)
 
 /**
  * Start Real-Time Presence for "الداخلين حالياً للموقع" (Active Online Visitors)
- * Bypasses presence registration for excluded admin emails: adwwaw@gmail.com and adouaourachid@gmail.com
+ * Bypasses presence registration for screen 384x824 and excluded admin emails: adwwaw@gmail.com and adouaourachid@gmail.com
  */
 export function startActivePresence(onActiveCountChange: (count: number) => void, userEmail?: string | null): () => void {
   if (typeof window === 'undefined') return () => {};
+
+  // Bypass presence registration completely for excluded screen 384x824 and admin emails
+  if (isExcludedScreen() || isCurrentSessionExcluded(userEmail)) {
+    return () => {};
+  }
 
   const sessionId = getOrCreateSessionId();
   const sessionDocRef = doc(db, 'visitors', 'global', 'active_sessions', sessionId);
   const activeColRef = collection(db, 'visitors', 'global', 'active_sessions');
 
   const sendHeartbeat = async () => {
-    // If user is one of the excluded admin accounts, remove any active session and do not ping
-    if (isCurrentSessionExcluded(userEmail)) {
+    // If client device is 384x824 or one of the excluded admin accounts, remove any active session and do not ping
+    if (isExcludedScreen() || isCurrentSessionExcluded(userEmail)) {
       try {
         await deleteDoc(sessionDocRef);
       } catch {}
@@ -366,7 +447,35 @@ export async function resetVisitorCounterToZero(): Promise<void> {
 }
 
 /**
+ * Clean up any existing logs with screen 384x824 that may have been previously stored in Firestore
+ */
+export async function sanitizeExcludedVisitorLogs(): Promise<void> {
+  try {
+    const visitorDocRef = doc(db, 'visitors', 'global');
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(visitorDocRef);
+      if (!snap.exists()) return;
+      const data = snap.data();
+      const currentLogs: VisitorLogItem[] = Array.isArray(data?.recentLogs) ? data.recentLogs : [];
+      const filteredLogs = currentLogs.filter(l => !isExcludedScreen(l.screen));
+      const removedCount = currentLogs.length - filteredLogs.length;
+      if (removedCount > 0) {
+        const currentCount = typeof data?.count === 'number' && data.count >= 0 ? data.count : 0;
+        const newCount = Math.max(0, currentCount - removedCount);
+        transaction.update(visitorDocRef, {
+          count: newCount,
+          recentLogs: filteredLogs
+        });
+      }
+    });
+  } catch {
+    // Non-blocking cleanup
+  }
+}
+
+/**
  * Subscribe to live visitor counter and visitor logs starting from 0
+ * Automatically filters out any entries with screen 384x824
  */
 export function subscribeToVisitorData(onUpdate: (data: VisitorState) => void) {
   const visitorDocRef = doc(db, 'visitors', 'global');
@@ -383,7 +492,9 @@ export function subscribeToVisitorData(onUpdate: (data: VisitorState) => void) {
         const data = snap.data();
         const count = typeof data?.count === 'number' && data.count >= 0 ? data.count : 0;
         const updatedAt = data?.updatedAt || null;
-        const recentLogs: VisitorLogItem[] = Array.isArray(data?.recentLogs) ? data.recentLogs : [];
+        const rawLogs: VisitorLogItem[] = Array.isArray(data?.recentLogs) ? data.recentLogs : [];
+        // Strictly filter out any logs from 384x824
+        const recentLogs: VisitorLogItem[] = rawLogs.filter(l => !isExcludedScreen(l.screen));
         const dailyStats: DailyStatItem[] = Array.isArray(data?.dailyStats) ? data.dailyStats : [];
 
         onUpdate({

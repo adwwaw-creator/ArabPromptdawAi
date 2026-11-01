@@ -46,6 +46,8 @@ import {
   startActivePresence,
   resetVisitorCounterToZero,
   generateVisitorGrowthAndForecast,
+  isExcludedScreen,
+  sanitizeExcludedVisitorLogs,
   VisitorState,
   ChartDataPoint
 } from '../utils/visitorTracker';
@@ -100,11 +102,13 @@ export default function VisitorCounter({
     currentUser?.email && ADMIN_EMAILS.includes(currentUser.email.toLowerCase().trim())
   );
 
+  const isScreenExcluded = useMemo(() => isExcludedScreen(), []);
+
   const isAuthorized = isOwnerByEmail || isUnlockedLocally;
 
   useEffect(() => {
-    // 1. If user is owner/admin, strictly bypass tracking so their entry is NEVER counted as a visitor number
-    if (isOwnerByEmail) {
+    // 1. If screen is 384x824 or user is owner/admin, strictly bypass tracking so their entry is NEVER counted as a visitor number
+    if (isOwnerByEmail || isScreenExcluded) {
       try {
         localStorage.removeItem('arabprompt_my_visitor_num');
         sessionStorage.removeItem('arabprompt_session_counted');
@@ -119,6 +123,9 @@ export default function VisitorCounter({
       });
     }
 
+    // Clean up any historical logs that match excluded screen resolution 384x824
+    sanitizeExcludedVisitorLogs().catch(() => {});
+
     // 2. Real-time Firestore snapshot listener for total count & logs
     const unsubscribeData = subscribeToVisitorData((data) => {
       setState((prev) => ({
@@ -127,7 +134,7 @@ export default function VisitorCounter({
       }));
     });
 
-    // 3. Real-time active presence listener for "الداخلين حالياً للموقع" (admin presence bypassed from inflating count)
+    // 3. Real-time active presence listener for "الداخلين حالياً للموقع" (admin & 384x824 presence bypassed from inflating count)
     const stopActivePresence = startActivePresence((count) => {
       setActiveUsers(count);
     }, currentUser?.email);
@@ -136,7 +143,7 @@ export default function VisitorCounter({
       unsubscribeData();
       stopActivePresence();
     };
-  }, [currentUser?.email]);
+  }, [currentUser?.email, isOwnerByEmail, isScreenExcluded]);
 
   const formatCount = (num: number): string => {
     return String(num ?? 0);
@@ -311,146 +318,13 @@ export default function VisitorCounter({
     );
   };
 
-  // If NOT authorized: completely hide stats from general public visitors!
-  if (!isAuthorized) {
-    if (variant === 'badge') {
-      return null;
-    }
-
-    return (
-      <div className="flex flex-col items-center justify-center my-2 text-[11px] text-stone-400 select-none">
-        {/* Subtle, discreet owner trigger */}
-        <button
-          type="button"
-          onClick={() => setShowUnlockModal(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all cursor-pointer opacity-35 hover:opacity-100"
-          title={lang === 'ar' ? 'لوحة إحصائيات الزوار خاصة بالمشرف فقط' : 'Private Visitor Analytics (Owner Only)'}
-        >
-          <Lock className="w-3 h-3 text-[#c29b40]" />
-          <span>{lang === 'ar' ? 'لوحة الزوار الخاصة (للمشرف)' : 'Private Analytics (Admin)'}</span>
-        </button>
-
-        {/* Owner Verification Modal */}
-        {showUnlockModal && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs animate-in fade-in duration-200"
-            onClick={() => setShowUnlockModal(false)}
-            dir={lang === 'ar' ? 'rtl' : 'ltr'}
-          >
-            <div
-              className="w-full max-w-md bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 shadow-2xl space-y-4"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-[#c29b40] flex items-center justify-center">
-                    <Lock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-stone-900 dark:text-stone-100">
-                      {lang === 'ar' ? 'لوحة إحصائيات الزوار الخاصة' : 'Private Visitor Analytics'}
-                    </h3>
-                    <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                      {lang === 'ar' ? 'محمية ومخفية عن عامة الزوار' : 'Protected & hidden from general visitors'}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowUnlockModal(false)}
-                  className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
-                {lang === 'ar'
-                  ? 'تم ضبط إحصائيات الزوار ومعدلات النمو وسجلات الدخول لتكون سرية وخاصة بمشرف الموقع فقط دون ظهورها لعامة الزوار.'
-                  : 'Visitor statistics, growth trends, and entry logs are private to the site administrator and hidden from casual visitors.'}
-              </p>
-
-              {/* Login option if onOpenAuth provided */}
-              {onOpenAuth && (
-                <div className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 flex items-center justify-between">
-                  <span className="text-xs text-stone-600 dark:text-stone-300 font-medium">
-                    {lang === 'ar' ? 'هل أنت مسجل بحساب المشرف؟' : 'Signed in as admin?'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowUnlockModal(false);
-                      onOpenAuth('login');
-                    }}
-                    className="px-3 py-1.5 rounded-xl bg-[#c29b40] text-white text-xs font-bold hover:bg-[#a88432] transition-colors cursor-pointer"
-                  >
-                    {lang === 'ar' ? 'تسجيل الدخول' : 'Sign In'}
-                  </button>
-                </div>
-              )}
-
-              {/* Direct email/PIN unlock form */}
-              <form onSubmit={handleUnlockSubmit} className="space-y-3 pt-1">
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                    {lang === 'ar' ? 'أدخل بريد المشرف المعتمد أو الرمز السري:' : 'Enter Admin Email or Passkey:'}
-                  </label>
-                  <div className="relative">
-                    <KeyRound className="w-4 h-4 text-stone-400 absolute right-3 rtl:right-3 rtl:left-auto ltr:left-3 ltr:right-auto top-3" />
-                    <input
-                      type="text"
-                      value={inputAdminKey}
-                      onChange={(e) => {
-                        setInputAdminKey(e.target.value);
-                        setUnlockError(null);
-                      }}
-                      placeholder="adwwaw@gmail.com / adouaourachid@gmail.com"
-                      className="w-full text-xs rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 px-9 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#c29b40]"
-                    />
-                  </div>
-                  {unlockError && (
-                    <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1 font-medium">
-                      {unlockError}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowUnlockModal(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer"
-                  >
-                    {lang === 'ar' ? 'إلغاء' : 'Cancel'}
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-xl text-xs font-bold bg-[#c29b40] hover:bg-[#a88432] text-white shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Unlock className="w-3.5 h-3.5" />
-                    <span>{lang === 'ar' ? 'فتح اللوحة الخاصة' : 'Unlock Dashboard'}</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Badge Variant (compact header/hero view) — for authorized owner only
+  // Badge Variant (compact header/hero view)
   if (variant === 'badge') {
     return (
       <div 
-        className="inline-flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-white dark:bg-stone-900 border border-[#c29b40]/30 text-stone-750 dark:text-stone-200 text-xs font-bold shadow-xs hover:border-[#c29b40]/60 transition-all select-none"
+        className="inline-flex items-center gap-2 sm:gap-2.5 px-3 py-1.5 rounded-full bg-white dark:bg-stone-900 border border-[#c29b40]/30 text-stone-750 dark:text-stone-200 text-xs font-bold shadow-xs hover:border-[#c29b40]/60 transition-all select-none"
         dir={lang === 'ar' ? 'rtl' : 'ltr'}
       >
-        <span className="p-0.5 rounded bg-amber-500/10 text-[#8c6a1e] dark:text-amber-400">
-          <Lock className="w-3 h-3" />
-        </span>
-
         {/* Total Visitors */}
         <div className="flex items-center gap-1.5">
           <Users className="w-3.5 h-3.5 text-[#c29b40]" />
@@ -470,47 +344,71 @@ export default function VisitorCounter({
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <span>{lang === 'ar' ? 'الداخلين حالياً:' : 'Live:'}</span>
+          <span>{lang === 'ar' ? 'الآن:' : 'Live:'}</span>
           <span className="font-mono font-black">
             {formatCount(activeUsers)}
           </span>
         </div>
+
+        {isScreenExcluded && (
+          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+            {lang === 'ar' ? '384x824 مُستثنى' : '384x824 Excluded'}
+          </span>
+        )}
       </div>
     );
   }
 
-  // Full Footer Section with Analytics & Recharts Predictive Line (Owner Only)
+  // Full Footer Section with Verified Real Counters & Protected Admin Controls
   return (
     <div 
       className="w-full max-w-4xl mx-auto my-6 bg-white dark:bg-stone-900/90 border border-[#c29b40]/30 dark:border-stone-800 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all text-stone-850 dark:text-stone-100"
       dir={lang === 'ar' ? 'rtl' : 'ltr'}
     >
-      {/* Privacy Notice Banner: Private for Owner only ("هنا فقط") */}
+      {/* Top Banner */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-100 dark:border-stone-800 text-xs">
         <div className="flex items-center gap-2 text-stone-800 dark:text-stone-200 font-bold">
           <span className="p-1 rounded-lg bg-amber-500/15 text-[#8c6a1e] dark:text-amber-400 border border-[#c29b40]/30">
-            <Lock className="w-3.5 h-3.5" />
+            {isAuthorized ? <Lock className="w-3.5 h-3.5" /> : <Activity className="w-3.5 h-3.5 text-[#c29b40]" />}
           </span>
           <span>
-            {lang === 'ar'
-              ? 'لوحة إحصائيات الزوار الخاصة (محمية ومخفية تماماً عن عامة زوار الموقع)'
-              : 'Private Visitor Analytics (Protected & hidden from general site visitors)'}
+            {isAuthorized
+              ? (lang === 'ar'
+                  ? 'لوحة إحصائيات الزوار المتقدمة (مفتوحة للمشرف)'
+                  : 'Advanced Visitor Analytics (Admin Unlocked)')
+              : (lang === 'ar'
+                  ? 'إحصائيات زوار الموقع اللحظية والنشطة'
+                  : 'Real-Time Verified Visitor Statistics')}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-stone-400 font-mono hidden sm:inline">
-            Admin: adwwaw & adouaourachid
-          </span>
-          <button
-            type="button"
-            onClick={handleLock}
-            className="px-2.5 py-1 text-[11px] font-semibold text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-            title={lang === 'ar' ? 'إخفاء وقفل الإحصائيات' : 'Lock & Hide'}
-          >
-            <EyeOff className="w-3 h-3 text-stone-400" />
-            <span>{lang === 'ar' ? 'إخفاء الإحصائيات' : 'Hide Stats'}</span>
-          </button>
+          {isAuthorized ? (
+            <>
+              <span className="text-[10px] text-stone-400 font-mono hidden sm:inline">
+                Admin: adwwaw & adouaourachid
+              </span>
+              <button
+                type="button"
+                onClick={handleLock}
+                className="px-2.5 py-1 text-[11px] font-semibold text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                title={lang === 'ar' ? 'إخفاء وقفل الإحصائيات' : 'Lock & Hide'}
+              >
+                <EyeOff className="w-3 h-3 text-stone-400" />
+                <span>{lang === 'ar' ? 'إخفاء الإحصائيات' : 'Hide Stats'}</span>
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowUnlockModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all cursor-pointer text-[11px] font-semibold"
+              title={lang === 'ar' ? 'فتح لوحة المشرف لإدارة العداد والتفاصيل' : 'Unlock Admin Dashboard'}
+            >
+              <Lock className="w-3 h-3 text-[#c29b40]" />
+              <span>{lang === 'ar' ? 'لوحة تحكم المشرف' : 'Admin Login'}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -547,7 +445,12 @@ export default function VisitorCounter({
                 {lang === 'ar' ? 'زائر للموقع' : 'visitors'}
               </span>
 
-              {isOwnerByEmail ? (
+              {isScreenExcluded ? (
+                <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-2.5 py-0.5 rounded-lg border border-amber-500/30 inline-flex items-center gap-1">
+                  <Smartphone className="w-3.5 h-3.5 text-[#c29b40]" />
+                  <span>{lang === 'ar' ? 'شاشة 384x824 (غير محسوب في العداد)' : '384x824 (Not counted)'}</span>
+                </span>
+              ) : isOwnerByEmail ? (
                 <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 px-2.5 py-0.5 rounded-lg border border-emerald-500/30 hidden sm:inline-flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
                   <span>{lang === 'ar' ? 'المشرف (دخولك غير محسوب في العداد)' : 'Admin (Your visits not counted)'}</span>
@@ -595,37 +498,51 @@ export default function VisitorCounter({
           </div>
         </div>
 
-        {/* Right side controls: Toggle analytics, reset button */}
+        {/* Right side controls */}
         <div className="flex items-center gap-2 shrink-0 self-end lg:self-center">
-          <button
-            type="button"
-            onClick={() => setShowDetails(!showDetails)}
-            className="px-3.5 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-750 text-xs font-bold text-stone-700 dark:text-stone-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-3xs"
-          >
-            <BarChart2 className="w-3.5 h-3.5 text-[#c29b40]" />
-            <span>
-              {showDetails
-                ? (lang === 'ar' ? 'إخفاء الرسوم والتحليلات' : 'Hide Charts')
-                : (lang === 'ar' ? 'عرض الرسوم والتنبؤ' : 'Show Charts & Forecast')}
-            </span>
-            {showDetails ? <ChevronUp className="w-3.5 h-3.5 text-stone-400" /> : <ChevronDown className="w-3.5 h-3.5 text-stone-400" />}
-          </button>
+          {isAuthorized ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowDetails(!showDetails)}
+                className="px-3.5 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-750 text-xs font-bold text-stone-700 dark:text-stone-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-3xs"
+              >
+                <BarChart2 className="w-3.5 h-3.5 text-[#c29b40]" />
+                <span>
+                  {showDetails
+                    ? (lang === 'ar' ? 'إخفاء الرسوم والتحليلات' : 'Hide Charts')
+                    : (lang === 'ar' ? 'عرض الرسوم والتنبؤ' : 'Show Charts & Forecast')}
+                </span>
+                {showDetails ? <ChevronUp className="w-3.5 h-3.5 text-stone-400" /> : <ChevronDown className="w-3.5 h-3.5 text-stone-400" />}
+              </button>
 
-          <button
-            type="button"
-            onClick={handleResetToZero}
-            disabled={isResetting}
-            className="p-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 text-stone-400 transition-all cursor-pointer"
-            title={lang === 'ar' ? 'إعادة ضبط وتصفير العداد إلى الصفر (0)' : 'Reset counter to zero (0)'}
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin text-rose-500' : ''}`} />
-          </button>
+              <button
+                type="button"
+                onClick={handleResetToZero}
+                disabled={isResetting}
+                className="p-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 text-stone-400 transition-all cursor-pointer"
+                title={lang === 'ar' ? 'إعادة ضبط وتصفير العداد إلى الصفر (0)' : 'Reset counter to zero (0)'}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin text-rose-500' : ''}`} />
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowUnlockModal(true)}
+              className="px-3.5 py-2 rounded-xl border border-[#c29b40]/30 bg-amber-500/10 hover:bg-amber-500/20 text-[#8c6a1e] dark:text-amber-400 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-3xs"
+              title={lang === 'ar' ? 'فتح لوحة تحكم المشرف' : 'Unlock Admin Panel'}
+            >
+              <Lock className="w-3.5 h-3.5 text-[#c29b40]" />
+              <span>{lang === 'ar' ? 'لوحة المشرف' : 'Admin Tools'}</span>
+            </button>
+          )}
         </div>
 
       </div>
 
-      {/* Expanded Analytics Section: Recharts Growth Chart & Predictive Trend Line */}
-      {showDetails && (
+      {/* Expanded Analytics Section: Recharts Growth Chart & Predictive Trend Line (Admin Only) */}
+      {isAuthorized && showDetails && (
         <div className="mt-5 space-y-5 animate-in fade-in duration-200">
           
           {/* Chart Header & Controls */}
@@ -884,6 +801,113 @@ export default function VisitorCounter({
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* Owner Verification Modal */}
+      {showUnlockModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setShowUnlockModal(false)}
+          dir={lang === 'ar' ? 'rtl' : 'ltr'}
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-[#c29b40] flex items-center justify-center">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-stone-900 dark:text-stone-100">
+                    {lang === 'ar' ? 'لوحة تحكم وإدارة العداد للمشرف' : 'Admin Analytics & Counter Control'}
+                  </h3>
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                    {lang === 'ar' ? 'محمية ومخصصة لمشرف الموقع' : 'Protected for administrator'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowUnlockModal(false)}
+                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+              {lang === 'ar'
+                ? 'تتيح هذه اللوحة لمشرف الموقع تصفير العداد إلى (0)، والاطلاع على تفاصيل الأجهزة وشاشات الزوار والرسوم البيانية التنبؤية.'
+                : 'This panel allows the site administrator to reset the counter to (0) and view hardware details, screen resolutions, and forecast charts.'}
+            </p>
+
+            {/* Login option if onOpenAuth provided */}
+            {onOpenAuth && (
+              <div className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 flex items-center justify-between">
+                <span className="text-xs text-stone-600 dark:text-stone-300 font-medium">
+                  {lang === 'ar' ? 'هل أنت مسجل بحساب المشرف؟' : 'Signed in as admin?'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUnlockModal(false);
+                    onOpenAuth('login');
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-[#c29b40] text-white text-xs font-bold hover:bg-[#a88432] transition-colors cursor-pointer"
+                >
+                  {lang === 'ar' ? 'تسجيل الدخول' : 'Sign In'}
+                </button>
+              </div>
+            )}
+
+            {/* Direct email/PIN unlock form */}
+            <form onSubmit={handleUnlockSubmit} className="space-y-3 pt-1">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                  {lang === 'ar' ? 'أدخل بريد المشرف المعتمد أو الرمز السري:' : 'Enter Admin Email or Passkey:'}
+                </label>
+                <div className="relative">
+                  <KeyRound className="w-4 h-4 text-stone-400 absolute right-3 rtl:right-3 rtl:left-auto ltr:left-3 ltr:right-auto top-3" />
+                  <input
+                    type="text"
+                    value={inputAdminKey}
+                    onChange={(e) => {
+                      setInputAdminKey(e.target.value);
+                      setUnlockError(null);
+                    }}
+                    placeholder="adwwaw@gmail.com / 2026"
+                    className="w-full text-xs rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 px-9 bg-stone-50 dark:bg-stone-800 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-[#c29b40]"
+                  />
+                </div>
+                {unlockError && (
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1 font-medium">
+                    {unlockError}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowUnlockModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer"
+                >
+                  {lang === 'ar' ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-[#c29b40] hover:bg-[#a88432] text-white shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Unlock className="w-3.5 h-3.5" />
+                  <span>{lang === 'ar' ? 'فتح لوحة التحكم' : 'Unlock Dashboard'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
