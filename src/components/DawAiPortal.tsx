@@ -15,10 +15,9 @@ interface DawAiPortalProps {
   lang: AppLanguage;
   onNavigateTab: (tab: ActiveTab) => void;
   onOpenAuth?: () => void;
-  onOpenCheckout?: () => void;
 }
 
-export default function DawAiPortal({ lang, onNavigateTab, onOpenAuth, onOpenCheckout }: DawAiPortalProps) {
+export default function DawAiPortal({ lang, onNavigateTab, onOpenAuth }: DawAiPortalProps) {
   const isAr = lang === 'ar';
   const Arrow = isAr ? ArrowLeft : ArrowRight;
 
@@ -91,14 +90,6 @@ export default function DawAiPortal({ lang, onNavigateTab, onOpenAuth, onOpenChe
     },
   ];
 
-  const handleTriggerCheckout = () => {
-    if (onOpenCheckout) {
-      onOpenCheckout();
-    } else {
-      window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'pro' } }));
-    }
-  };
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 animate-fade-in">
       
@@ -153,6 +144,22 @@ export default function DawAiPortal({ lang, onNavigateTab, onOpenAuth, onOpenChe
               <Arrow className="w-4 h-4" />
             </button>
 
+            {/* PromteFree Link positioned near مهندس الأوامر */}
+            <a
+              href="https://adwwaw-creator.github.io/PromteFree/"
+              target="_blank"
+              rel="noopener noreferrer"
+              id="dawai-hero-promtefree-link"
+              className="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 hover:text-white font-black text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer backdrop-blur-sm shadow-xs"
+              title={isAr ? 'PromteFree - أداة برومبت فري المجانية الخارجية' : 'PromteFree - Free Prompt Tool'}
+            >
+              <ExternalLink className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>PromteFree</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-600 text-white font-black leading-none">
+                {isAr ? 'مجاني ↗' : 'Free ↗'}
+              </span>
+            </a>
+
             <button
               type="button"
               onClick={() => onNavigateTab('library')}
@@ -160,15 +167,6 @@ export default function DawAiPortal({ lang, onNavigateTab, onOpenAuth, onOpenChe
             >
               <BookOpen className="w-4 h-4 text-amber-300" />
               <span>{isAr ? '📚 مكتبة البرومتات (110+ قالب)' : '📚 Prompt Library (110+)'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleTriggerCheckout}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-[#c29b40]/30 to-amber-500/20 hover:from-amber-500/30 hover:to-amber-500/30 text-amber-300 border border-[#c29b40]/60 font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-            >
-              <Crown className="w-4 h-4 text-amber-400" />
-              <span>{isAr ? 'الترقية والاشتراك والدفع' : 'Upgrade & Pay'}</span>
             </button>
           </div>
         </div>
@@ -232,23 +230,28 @@ export default function DawAiPortal({ lang, onNavigateTab, onOpenAuth, onOpenChe
               </div>
             </div>
 
-            <div className="pt-6 flex flex-wrap gap-2.5">
+            <div className="pt-6 flex flex-col sm:flex-row gap-2.5">
               <button
                 type="button"
                 onClick={() => onNavigateTab('builder')}
                 className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-[#916a24] via-[#c29b40] to-amber-500 hover:opacity-95 text-white font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>{isAr ? 'الدخول إلى الاستوديو' : 'Launch Studio'}</span>
+                <span>{isAr ? 'الدخول إلى مُهندس الأوامر' : 'Launch Studio'}</span>
                 <Arrow className="w-4 h-4" />
               </button>
-              <button
-                type="button"
-                onClick={handleTriggerCheckout}
-                className="py-3 px-4 rounded-xl bg-stone-900 dark:bg-white text-white dark:text-stone-950 font-black text-xs sm:text-sm shadow-sm hover:opacity-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              <a
+                href="https://adwwaw-creator.github.io/PromteFree/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-3 px-4 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/35 text-emerald-700 dark:text-emerald-300 font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                title={isAr ? 'PromteFree — أداة برومبت فري المجانية' : 'PromteFree — Free Tool'}
               >
-                <Crown className="w-3.5 h-3.5 text-amber-400" />
-                <span>{isAr ? 'الترقية والدفع' : 'Upgrade'}</span>
-              </button>
+                <ExternalLink className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>PromteFree</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-600 text-white font-black leading-none">
+                  {isAr ? 'مجاني ↗' : 'Free ↗'}
+                </span>
+              </a>
             </div>
           </article>
 

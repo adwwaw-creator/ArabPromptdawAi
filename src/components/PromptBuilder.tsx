@@ -9,7 +9,7 @@ import {
   Share2, Tag, Plus, X, Hash, Image as ImageIcon, LayoutTemplate, Heart, Zap,
   UploadCloud, ImagePlus, Layers, Camera, Palette, Eye, CheckCircle2, Trash2, ArrowDown,
   Wand2, FileText, ListPlus, FileDown, CheckCheck, ChevronDown, ChevronUp, Send,
-  BookOpen, Crown
+  BookOpen, Crown, ExternalLink
 } from 'lucide-react';
 import { ModelType, AppLanguage, SUPPORTED_LANGUAGES } from '../types';
 import { getTranslation } from '../utils/translations';
@@ -705,29 +705,6 @@ function PromptBuilder({ lang, onSendToTester, onNavigateToReverse, onNavigateTo
       return;
     }
 
-    // 💎 Paid Mode Branch: Checks subscription quota and calls Gemini cloud API
-    const quota = checkGenerationQuota();
-    if (!quota.allowed) {
-      if (quota.requiresSubscription) {
-        setErrorMsg(
-          lang === 'ar'
-            ? '🛑 النمط المدفوع يتطلب اشتراكاً نشطاً في إحدى الباقات. يمكنك التبديل للنمط "المجاني 0 API" في الأعلى للتوليد الفوري بلا مقابل، أو الترقية للمتابعة السحابية.'
-            : '🛑 Paid mode requires an active subscription. You can switch to "Free Mode (0 API)" above to generate instantly for free, or upgrade.'
-        );
-        window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'pro', billingCycle: 'annual' } }));
-      } else {
-        setErrorMsg(
-          lang === 'ar'
-            ? `🛑 لقد استهلكت كامل حصتك اليومية من طلبات الـ API (${quota.max} طلباً). يرجى ترقية باقتك للاستمرار أو التبديل للنمط المجاني.`
-            : `🛑 You have exhausted your daily API quota (${quota.max} requests). Please upgrade or use Free Mode.`
-        );
-        window.dispatchEvent(new CustomEvent('quota-threshold-reached', {
-          detail: { threshold: 100, used: quota.max, remaining: 0, max: quota.max, plan: quota.plan }
-        }));
-      }
-      return;
-    }
-
     setLoading(true);
     setErrorMsg('');
     setCurrentResult('');
@@ -880,30 +857,6 @@ function PromptBuilder({ lang, onSendToTester, onNavigateToReverse, onNavigateTo
           : `✓ Batch of ${initialItems.length} prompts synthesized locally (Free 0 API)!`,
         false
       );
-      return;
-    }
-
-    // 💎 Paid Bulk Mode Branch
-    const quota = checkGenerationQuota();
-    if (!quota.allowed) {
-      if (quota.requiresSubscription) {
-        setErrorMsg(
-          lang === 'ar'
-            ? '🛑 النمط المدفوع يتطلب اشتراكاً نشطاً. يمكنك التبديل للنمط "المجاني 0 API" في الأعلى للتوليد الفوري بلا مقابل.'
-            : '🛑 Paid mode requires an active subscription. You can switch to Free Mode above to generate instantly.'
-        );
-        window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'pro', billingCycle: 'annual' } }));
-      } else {
-        setErrorMsg(
-          lang === 'ar'
-            ? `🛑 لقد استهلكت كامل حصتك اليومية من طلبات الـ API (${quota.max} طلباً). يرجى ترقية باقتك للاستمرار أو استخدام النمط المجاني.`
-            : `🛑 You have exhausted your daily API quota (${quota.max} requests). Please upgrade or use Free Mode.`
-        );
-        window.dispatchEvent(new CustomEvent('quota-threshold-reached', {
-          detail: { threshold: 100, used: quota.max, remaining: 0, max: quota.max, plan: quota.plan }
-        }));
-        window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'pro', billingCycle: 'annual' } }));
-      }
       return;
     }
 
@@ -1179,6 +1132,21 @@ function PromptBuilder({ lang, onSendToTester, onNavigateToReverse, onNavigateTo
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+              <a
+                href="https://adwwaw-creator.github.io/PromteFree/"
+                target="_blank"
+                rel="noopener noreferrer"
+                id="builder-promtefree-btn"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-800 hover:text-white dark:text-emerald-300 dark:hover:text-white transition-all text-xs font-bold border border-emerald-500/35 hover:border-emerald-600 cursor-pointer shadow-2xs group"
+                title={lang === 'ar' ? 'PromteFree - أداة برومبت فري المجانية الخارجية' : 'PromteFree - Free External Prompt Tool'}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse group-hover:bg-white shrink-0" />
+                <ExternalLink className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 group-hover:text-white transition-colors shrink-0" />
+                <span>PromteFree</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-600 text-white font-black group-hover:bg-white group-hover:text-emerald-700 leading-none">
+                  {lang === 'ar' ? 'مجاني ↗' : 'Free ↗'}
+                </span>
+              </a>
               {onNavigateToLibrary && (
                 <button
                   type="button"
@@ -1342,21 +1310,17 @@ function PromptBuilder({ lang, onSendToTester, onNavigateToReverse, onNavigateTo
                     className="w-full text-xs sm:text-sm rounded-xl border border-stone-300 p-3.5 focus:outline-none focus:ring-2 focus:ring-[#c29b40]/30 focus:border-[#c29b40] bg-[#fdfdfc] text-stone-800 placeholder-stone-400 font-sans"
                   />
 
-                  {/* 🎛️ Mode Selector: خيار بين المجاني (0 API محلي من المكتبة) أو المدفوع (Gemini AI Cloud Pro) */}
+                  {/* 🎛️ Mode Selector: خيار بين المجاني المحلي أو السحابي الذكي (كلاهما مجاني 100%) */}
                   <div className="mt-3 p-3 rounded-2xl bg-gradient-to-b from-stone-50 to-stone-100/70 dark:from-stone-900/80 dark:to-stone-900/40 border border-stone-200/90 dark:border-stone-800 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5 font-sans">
                         <Zap className="w-3.5 h-3.5 text-[#c29b40]" />
-                        <span>{lang === 'ar' ? 'حدد مسار التوليد (مجاني من المكتبة أو مدفوع سحابي):' : 'Select Generation Engine (Free Local or Paid Cloud):'}</span>
+                        <span>{lang === 'ar' ? 'حدد مسار التوليد (المحلي الفوري أو السحابي الذكي - كلاهما مجاني 100%):' : 'Select Generation Engine (Local Instant or Cloud AI - 100% Free):'}</span>
                       </span>
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
-                        generationEngineMode === 'free'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-300'
-                          : 'bg-amber-100 text-[#916a24] dark:bg-amber-950/70 dark:text-amber-300 border-amber-300'
-                      }`}>
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full border bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-300">
                         {generationEngineMode === 'free'
-                          ? (lang === 'ar' ? '⚡ النمط المجاني مفعّل' : '⚡ Free Mode Active')
-                          : (lang === 'ar' ? '💎 النمط المدفوع مفعّل' : '💎 Paid Mode Active')}
+                          ? (lang === 'ar' ? '⚡ النمط المحلي الفوري مفعّل' : '⚡ Local Instant Active')
+                          : (lang === 'ar' ? '✨ النمط السحابي الذكي مفعّل' : '✨ Cloud AI Active')}
                       </span>
                     </div>
 
@@ -1375,7 +1339,7 @@ function PromptBuilder({ lang, onSendToTester, onNavigateToReverse, onNavigateTo
                           <div className="flex items-center gap-1.5">
                             <span className="text-base">⚡</span>
                             <span className={`text-xs font-black ${generationEngineMode === 'free' ? 'text-emerald-700 dark:text-emerald-400' : 'text-stone-700 dark:text-stone-300'}`}>
-                              {lang === 'ar' ? 'نمط مجاني (مكتبة الموقع)' : 'Free Mode (Local Library)'}
+                              {lang === 'ar' ? 'نمط محلي فوري (مكتبة الموقع)' : 'Local Mode (Prompt Library)'}
                             </span>
                           </div>
                           <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80">
@@ -1384,8 +1348,8 @@ function PromptBuilder({ lang, onSendToTester, onNavigateToReverse, onNavigateTo
                         </div>
                         <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-snug">
                           {lang === 'ar'
-                            ? 'توليد فوري مستحضر من المكتبة ومعايير التخصص دون جمني أو قيود اشتراك — يعمل 100% داخل الموقع.'
-                            : 'Instant synthesis from local library rules with zero API consumption and no subscription barriers.'}
+                            ? 'توليد فوري مستحضر من المكتبة ومعايير التخصص دون جمني أو قيود — يعمل 100% داخل المتصفح.'
+                            : 'Instant synthesis from local library rules with zero API consumption and no barriers.'}
                         </p>
                         {generationEngineMode === 'free' && (
                           <div className="flex items-center gap-1 text-[10px] font-black text-emerald-700 dark:text-emerald-400 mt-0.5">
@@ -1395,7 +1359,7 @@ function PromptBuilder({ lang, onSendToTester, onNavigateToReverse, onNavigateTo
                         )}
                       </button>
 
-                      {/* Option 2: المدفوع عبر Gemini Cloud */}
+                      {/* Option 2: السحابي عبر Gemini Cloud مجاناً */}
                       <button
                         type="button"
                         onClick={() => setGenerationEngineMode('paid')}
@@ -1407,19 +1371,19 @@ function PromptBuilder({ lang, onSendToTester, onNavigateToReverse, onNavigateTo
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-base">💎</span>
+                            <span className="text-base">✨</span>
                             <span className={`text-xs font-black ${generationEngineMode === 'paid' ? 'text-[#916a24] dark:text-amber-400' : 'text-stone-700 dark:text-stone-300'}`}>
-                              {lang === 'ar' ? 'نمط مدفوع (Gemini Pro AI)' : 'Paid Mode (Gemini Pro AI)'}
+                              {lang === 'ar' ? 'نمط سحابي ذكي مجاني (Gemini AI)' : 'Free Cloud AI (Gemini AI)'}
                             </span>
                           </div>
                           <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-[#916a24] dark:text-amber-300 border border-amber-200/80">
-                            {lang === 'ar' ? 'سحابي ذكي' : 'Cloud AI'}
+                            {lang === 'ar' ? 'سحابي مجاني' : 'Free Cloud'}
                           </span>
                         </div>
                         <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-snug">
                           {lang === 'ar'
-                            ? 'استدعاء سحابي لنموذج Google Gemini 2.5 Pro للتحليل العميق والتفكير المتقدم للمشتركين.'
-                            : 'Advanced cloud reasoning via Google Gemini 2.5 Pro for active subscribers.'}
+                            ? 'استدعاء سحابي لنموذج Google Gemini 2.5 للتحليل العميق والتفكير المتقدم متاح مجاناً للجميع.'
+                            : 'Advanced cloud reasoning via Google Gemini 2.5 for everyone completely free.'}
                         </p>
                         {generationEngineMode === 'paid' && (
                           <div className="flex items-center gap-1 text-[10px] font-black text-[#916a24] dark:text-amber-400 mt-0.5">
@@ -2501,29 +2465,6 @@ function PromptBuilder({ lang, onSendToTester, onNavigateToReverse, onNavigateTo
                         <span className="font-bold">{lang === 'ar' ? 'تنبيه الاستخدام أو الحصة:' : 'Platform Notice:'}</span> {errorMsg}
                       </div>
                     </div>
-                    {(errorMsg.includes('مدفوعة') || errorMsg.includes('ترقية') || errorMsg.includes('حصتك') || errorMsg.includes('quota') || errorMsg.includes('upgrade') || errorMsg.includes('subscribe')) && (
-                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-rose-200/60 dark:border-rose-900/40">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'pro', billingCycle: 'annual' } }));
-                          }}
-                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#916a24] via-[#c29b40] to-amber-500 hover:opacity-95 text-white font-black text-xs shadow-md flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Crown className="w-3.5 h-3.5" />
-                          <span>{lang === 'ar' ? 'الترقية الفورية الآن والدفع ⚡' : 'Upgrade & Go to Payment ⚡'}</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'lite', billingCycle: 'annual' } }));
-                          }}
-                          className="px-3.5 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-stone-800 dark:text-stone-200 font-bold text-xs hover:bg-stone-50 cursor-pointer"
-                        >
-                          <span>{lang === 'ar' ? 'باقة Lite المخفضة ($3.50/شهر)' : 'Starter Lite ($3.50/mo)'}</span>
-                        </button>
-                      </div>
-                    )}
                   </div>
                 )}
 

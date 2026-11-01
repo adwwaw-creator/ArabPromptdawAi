@@ -11,7 +11,7 @@ import {
   Image, Film, BarChart3, Music, Sun, Moon, Video, Database, Layout, Cloud, 
   Shield, ShieldCheck, RefreshCw, LogIn, User as UserIcon, Lightbulb, ChevronDown, Check,
   Clapperboard, Calculator, Palette, CreditCard, LayoutTemplate, Crown, Activity,
-  Type, BookOpen
+  Type, BookOpen, ExternalLink
 } from 'lucide-react';
 import { BackupMetadata } from '../utils/cloudBackup';
 import { User } from 'firebase/auth';
@@ -32,7 +32,6 @@ interface HeaderProps {
   user: User | null;
   onOpenAuth: (mode?: 'login' | 'signup' | 'profile' | 'usage') => void;
   subscription?: UserSubscription;
-  onOpenCheckout?: (plan?: SubscriptionPlan) => void;
   onOpenPlayGuide?: () => void;
 }
 
@@ -50,7 +49,6 @@ export default function Header({
   user, 
   onOpenAuth,
   subscription,
-  onOpenCheckout,
   onOpenPlayGuide
 }: HeaderProps) {
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
@@ -188,8 +186,7 @@ export default function Header({
     ...(isAdmin ? [
       { id: 'admin' as ActiveTab, label: lang === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard', icon: ShieldCheck },
       { id: 'privacy' as ActiveTab, label: t.navPrivacy, icon: Calculator }
-    ] : []),
-    { id: 'pricing' as ActiveTab, label: t.navPricing, icon: CreditCard },
+    ] : [])
   ];
 
   const formatMobileNavLabel = (id: ActiveTab, label: string) => {
@@ -286,13 +283,6 @@ export default function Header({
               <span>والخصوصية</span>
             </span>
           );
-        case 'pricing':
-          return (
-            <span className="flex flex-col items-center leading-[1.1]">
-              <span>الأسعار</span>
-              <span>والباقات</span>
-            </span>
-          );
         case 'templates':
           return (
             <span className="flex flex-col items-center leading-[1.1]">
@@ -355,19 +345,39 @@ export default function Header({
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
-                <button
-                  key={item.id}
-                  id={`nav-tab-${item.id}`}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 xl:px-3.5 rounded-xl text-xs xl:text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-300 ${
-                    isActive
-                      ? 'bg-[#c29b40] text-[#fcfbfa] shadow-md shadow-[#c29b40]/10 border border-[#b38d35]'
-                      : 'text-stone-600 dark:text-stone-300 hover:text-[#c29b40] dark:hover:text-amber-400 hover:bg-[#c29b40]/5 dark:hover:bg-[#c29b40]/15 border border-transparent'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
-                  <span>{item.label}</span>
-                </button>
+                <React.Fragment key={item.id}>
+                  <button
+                    id={`nav-tab-${item.id}`}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`flex items-center gap-1.5 px-3 py-2 xl:px-3.5 rounded-xl text-xs xl:text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-300 ${
+                      isActive
+                        ? 'bg-[#c29b40] text-[#fcfbfa] shadow-md shadow-[#c29b40]/10 border border-[#b38d35]'
+                        : 'text-stone-600 dark:text-stone-300 hover:text-[#c29b40] dark:hover:text-amber-400 hover:bg-[#c29b40]/5 dark:hover:bg-[#c29b40]/15 border border-transparent'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </button>
+
+                  {/* PromteFree Link positioned right next to مهندس الأوامر */}
+                  {item.id === 'builder' && (
+                    <a
+                      href="https://adwwaw-creator.github.io/PromteFree/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      id="header-promtefree-link"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 xl:px-3.5 rounded-xl text-xs xl:text-sm font-black whitespace-nowrap shrink-0 transition-all duration-300 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/35 hover:border-emerald-500/70 shadow-xs hover:shadow-sm group cursor-pointer"
+                      title={lang === 'ar' ? 'PromteFree — أداة برومبت فري المجانية الخارجية' : 'PromteFree — Free External Prompt Tool'}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                      <ExternalLink className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform shrink-0" />
+                      <span className="font-sans">PromteFree</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-600 text-white font-black leading-none">
+                        {lang === 'ar' ? 'مجاني ↗' : 'Free ↗'}
+                      </span>
+                    </a>
+                  )}
+                </React.Fragment>
               );
             })}
           </nav>
@@ -541,70 +551,15 @@ export default function Header({
                   ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 ring-1 ring-amber-400/40 animate-pulse'
                   : 'border-stone-200/90 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 hover:border-[#c29b40]/60'
               }`}
-              title={lang === 'ar' ? 'مراقبة استهلاك طلبات الـ API المتبقية في الوقت الفعلي' : 'Real-time remaining API requests'}
+              title={lang === 'ar' ? 'منصة مجانية 100% — استخدام غير محدود للجميع' : '100% Free Platform — Unlimited Access'}
             >
               <div className="relative flex items-center justify-center">
-                <Activity className={`w-3.5 h-3.5 ${
-                  usageStats.isLimitReached
-                    ? 'text-rose-600'
-                    : usageStats.isNearLimit
-                    ? 'text-amber-600'
-                    : 'text-[#c29b40]'
-                }`} />
-                {usageStats.isNearLimit && !usageStats.isLimitReached && (
-                  <span className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
-                )}
+                <Activity className="w-3.5 h-3.5 text-[#c29b40]" />
               </div>
-              <span className="font-mono font-black text-[11px] hidden sm:inline">
-                {usageStats.statusLevel === 'unpaid' ? (
-                  lang === 'ar' ? '0 طلب (يلزم اشتراك)' : '0 reqs'
-                ) : usageStats.isUnlimited ? (
-                  lang === 'ar' ? '∞' : '∞'
-                ) : (
-                  `${usageStats.remainingRequests}/${usageStats.maxDailyPrompts}`
-                )}
+              <span className="font-mono font-black text-[11px] hidden sm:inline text-emerald-600 dark:text-emerald-400">
+                {lang === 'ar' ? '∞ مجاني' : '∞ Free'}
               </span>
             </button>
-
-            {/* Subscription Plan Badge or Upgrade Button */}
-            {subscription?.plan && subscription.plan !== 'free' ? (
-              <button
-                id="header-sub-badge"
-                onClick={() => {
-                  if (onOpenCheckout) {
-                    onOpenCheckout(subscription.plan);
-                  } else {
-                    window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: subscription.plan } }));
-                  }
-                }}
-                className="flex items-center gap-1 px-2 py-1.5 sm:px-2.5 rounded-xl border border-[#c29b40]/50 bg-gradient-to-r from-amber-500/15 via-[#c29b40]/25 to-amber-500/15 text-stone-900 dark:text-stone-100 font-black text-xs shadow-3xs cursor-pointer hover:border-[#c29b40] transition-all shrink-0"
-                title={lang === 'ar' ? 'إدارة الاشتراك المميز' : 'Manage Subscription'}
-              >
-                <Crown className="w-3.5 h-3.5 text-[#c29b40]" />
-                <span className="font-sans font-black text-[10px] sm:text-[11px] tracking-wide">
-                  {subscription.plan === 'studio' ? 'STUDIO' : subscription.plan === 'lite' ? 'LITE' : 'PRO'}
-                </span>
-                <span className="text-[10px] text-amber-500 hidden sm:inline">
-                  {subscription.plan === 'lite' ? '⚡' : '⭐'}
-                </span>
-              </button>
-            ) : (
-              <button
-                id="header-upgrade-btn"
-                onClick={() => {
-                  if (onOpenCheckout) {
-                    onOpenCheckout('pro');
-                  } else {
-                    window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'pro' } }));
-                  }
-                }}
-                className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 rounded-xl bg-gradient-to-r from-[#916a24] via-[#c29b40] to-amber-500 hover:from-[#7e5c1d] hover:to-amber-600 text-white font-black text-xs shadow-md shadow-[#c29b40]/20 hover:opacity-95 transition-all cursor-pointer ring-1 ring-amber-400/40 animate-pulse shrink-0"
-                title={lang === 'ar' ? 'اشترك الآن للوصول الكامل والدفع' : 'Subscribe Now for Full Access'}
-              >
-                <Crown className="w-3.5 h-3.5" />
-                <span className="text-[11px] sm:text-xs">{lang === 'ar' ? 'اشترك' : 'Subscribe'}</span>
-              </button>
-            )}
 
             {/* Quick Admin Dashboard Access */}
             {isAdmin && (
@@ -664,20 +619,38 @@ export default function Header({
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`flex flex-col items-center justify-center gap-1 py-1.5 px-1.5 rounded-xl font-bold transition-all shrink-0 w-[82px] min-h-[64px] ${
-                  isActive
-                    ? 'text-[#916a24] dark:text-amber-400 bg-[#c29b40]/15 dark:bg-[#c29b40]/25 font-black border border-[#c29b40]/25 dark:border-[#c29b40]/40'
-                    : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
-                }`}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                <div className="text-[10px] text-center whitespace-normal break-words max-w-[76px] flex items-center justify-center min-h-[26px]">
-                  {formatMobileNavLabel(item.id, item.label)}
-                </div>
-              </button>
+              <React.Fragment key={item.id}>
+                <button
+                  onClick={() => setActiveTab(item.id)}
+                  className={`flex flex-col items-center justify-center gap-1 py-1.5 px-1.5 rounded-xl font-bold transition-all shrink-0 w-[82px] min-h-[64px] ${
+                    isActive
+                      ? 'text-[#916a24] dark:text-amber-400 bg-[#c29b40]/15 dark:bg-[#c29b40]/25 font-black border border-[#c29b40]/25 dark:border-[#c29b40]/40'
+                      : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <div className="text-[10px] text-center whitespace-normal break-words max-w-[76px] flex items-center justify-center min-h-[26px]">
+                    {formatMobileNavLabel(item.id, item.label)}
+                  </div>
+                </button>
+
+                {/* Mobile PromteFree button next to builder */}
+                {item.id === 'builder' && (
+                  <a
+                    href="https://adwwaw-creator.github.io/PromteFree/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center gap-1 py-1.5 px-1.5 rounded-xl font-black transition-all shrink-0 w-[82px] min-h-[64px] bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/35 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 shadow-2xs"
+                    title={lang === 'ar' ? 'PromteFree - برومبت فري المجاني' : 'PromteFree - Free Prompt Tool'}
+                  >
+                    <ExternalLink className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div className="text-[10px] text-center whitespace-normal break-words max-w-[76px] flex flex-col items-center justify-center min-h-[26px] leading-tight font-black">
+                      <span>PromteFree</span>
+                      <span className="text-[8px] text-emerald-600 dark:text-emerald-400 font-bold">{lang === 'ar' ? 'مجاني ↗' : 'Free ↗'}</span>
+                    </div>
+                  </a>
+                )}
+              </React.Fragment>
             );
           })}
         </div>

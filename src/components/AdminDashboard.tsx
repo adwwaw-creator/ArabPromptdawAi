@@ -379,11 +379,11 @@ export default function AdminDashboard({
           </div>
         </div>
 
-        {/* KPI 2: Paid Subscribers & Conversion */}
+        {/* KPI 2: Active Members & Community */}
         <div className="p-5 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 shadow-sm space-y-3 relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-stone-500 dark:text-stone-400">
-              {lang === 'ar' ? 'المشتركون بالباقات المدفوعة' : 'Paid Subscribers'}
+              {lang === 'ar' ? 'المستخدمون المميزون والنشطون' : 'Active Pro Members'}
             </span>
             <div className="w-9 h-9 rounded-xl bg-[#c29b40]/15 border border-[#c29b40]/30 text-[#916a24] dark:text-amber-400 flex items-center justify-center">
               <Crown className="w-4 h-4" />
@@ -395,7 +395,7 @@ export default function AdminDashboard({
               {loading ? '...' : (stats?.totalSubscribers || 0)}
             </span>
             <span className="text-xs text-stone-500 dark:text-stone-400 font-medium">
-              {lang === 'ar' ? 'مشترك مميز' : 'subscribers'}
+              {lang === 'ar' ? 'عضو مميز' : 'active members'}
             </span>
           </div>
 

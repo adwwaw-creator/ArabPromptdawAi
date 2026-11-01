@@ -32,14 +32,12 @@ import {
 interface ApiUsageMonitorProps {
   lang: AppLanguage;
   subscription?: UserSubscription;
-  onOpenCheckout?: (plan?: SubscriptionPlan) => void;
   compact?: boolean;
 }
 
 export default function ApiUsageMonitor({
   lang,
   subscription,
-  onOpenCheckout,
   compact = false
 }: ApiUsageMonitorProps) {
   const [stats, setStats] = useState<UsageStats>(() => getUsageStats(subscription));
@@ -143,7 +141,7 @@ export default function ApiUsageMonitor({
                 {getStatusBadge()}
               </h4>
               <p className="text-[10px] text-stone-500 dark:text-stone-400">
-                {lang === 'ar' ? 'منصة مدفوعة بالكامل | خوادم مخصصة بدون إعلانات' : '100% Paid Platform | Dedicated GPUs, Zero Ads'}
+                {lang === 'ar' ? 'منصة مجانية بالكامل 100% | خوادم سريعة بدون اشتراكات وبدون مفتاح' : '100% Free Platform | Fast GPUs, Zero Fees, No API Key Required'}
               </p>
             </div>
           </div>
@@ -169,11 +167,11 @@ export default function ApiUsageMonitor({
             <div className="flex items-center gap-1.5 mt-0.5">
               <Crown className="w-3.5 h-3.5 text-[#c29b40]" />
               <span className="font-black text-sm text-stone-900 dark:text-stone-100">
-                {stats.isPaid ? stats.planNameAr : (lang === 'ar' ? 'غير مشترك' : 'Unsubscribed')}
+                {stats.planNameAr}
               </span>
             </div>
-            <span className="text-[9px] text-[#9c7524] dark:text-amber-400 font-bold block mt-0.5">
-              {stats.isPaid ? (lang === 'ar' ? 'اشتراك مدفوع نشط' : 'Active Paid Member') : (lang === 'ar' ? 'يلزم باقة مدفوعة' : 'Subscription Required')}
+            <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold block mt-0.5">
+              {lang === 'ar' ? 'وصول مجاني مفتوح بالكامل' : '100% Full Free Access'}
             </span>
           </div>
 
@@ -256,90 +254,17 @@ export default function ApiUsageMonitor({
           </div>
         ) : null}
 
+        {/* 100% Free Platform Notice */}
+        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-2.5 text-emerald-800 dark:text-emerald-300">
+          <Zap className="w-4 h-4 text-emerald-500 shrink-0" />
+          <span className="text-xs font-bold">
+            {lang === 'ar' 
+              ? 'المنصة مجانية 100% بالكامل لجميع المستخدمين — تمتع بتوليد وهندسة الأوامر بدون أي رسوم أو اشتراكات.' 
+              : '100% Free Platform for all users — Enjoy unlimited prompt engineering with zero subscriptions.'}
+          </span>
+        </div>
+
       </div>
-
-      {/* ALERT SECTION: When User is Unpaid (Requires Paid Subscription) */}
-      {!stats.isPaid && (
-        <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-amber-500/10 border-2 border-[#c29b40]/50 shadow-sm space-y-3">
-          <div className="flex items-start gap-3">
-            <div className="p-1.5 rounded-xl bg-[#c29b40] text-white shrink-0 mt-0.5">
-              <Crown className="w-5 h-5" />
-            </div>
-            <div className="flex-1">
-              <div className="text-sm font-black text-stone-900 dark:text-stone-100">
-                {lang === 'ar' 
-                  ? '💎 المنصة مدفوعة بالكامل — اشترك الآن للبدء' 
-                  : '💎 100% Paid Platform — Subscribe to Start'}
-              </div>
-              <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed">
-                {lang === 'ar'
-                  ? 'تم تخصيص خوادم معالجة مخصصة ونماذج Gemini 2026 المتقدمة حصرياً للمشتركين فقط. اختر باقتك المفضلة واستمتع بإنتاج سينمائي غير محدود وبدون أي إعلانات.'
-                  : 'ArabPrompt is a fully paid, subscription-only platform with dedicated GPU compute, zero latency, and zero ads.'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => {
-                if (onOpenCheckout) onOpenCheckout('pro');
-                window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'pro' } }));
-              }}
-              className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#916a24] via-[#c29b40] to-amber-500 text-white font-black text-xs shadow-md hover:opacity-95 transition cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <Crown className="w-3.5 h-3.5" />
-              <span>{lang === 'ar' ? 'اشترك الآن في باقة Pro ($7/شهر)' : 'Subscribe to Pro ($7/mo)'}</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (onOpenCheckout) onOpenCheckout('lite');
-                window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'lite' } }));
-              }}
-              className="py-2.5 px-4 rounded-xl bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-stone-800 dark:text-stone-200 font-bold text-xs hover:bg-stone-50 transition cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <span>{lang === 'ar' ? 'باقة Lite الأرخص ($3.50/شهر)' : 'Starter Lite ($3.50/mo)'}</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ALERT SECTION: When Limit Reached */}
-      {stats.isPaid && stats.isLimitReached && (
-        <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border-2 border-rose-500 shadow-sm animate-fade-in flex flex-col gap-2.5">
-          <div className="flex items-start gap-2.5">
-            <div className="p-1 rounded-lg bg-rose-600 text-white shrink-0 mt-0.5">
-              <AlertOctagon className="w-4 h-4" />
-            </div>
-            <div className="flex-1">
-              <div className="text-xs font-black text-rose-900 dark:text-rose-200">
-                {lang === 'ar' ? '🛑 استُهلكت كامل حصة باقة Lite لليوم' : '🛑 Daily Quota Limit Reached'}
-              </div>
-              <p className="text-[11px] text-rose-800 dark:text-rose-300 mt-0.5 leading-relaxed">
-                {lang === 'ar'
-                  ? `استهلكت جميع الـ ${stats.maxDailyPrompts} طلباً لليوم. سيتجدد الرصيد عند منتصف الليل، أو يمكنك الترقية إلى باقة المحترف (Pro) للاستمتاع بطلبات غير محدودة فوراً.`
-                  : `You reached your daily limit. Upgrade to Pro Creator for unlimited generations.`}
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (onOpenCheckout) onOpenCheckout('pro');
-              window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'pro' } }));
-            }}
-            className="py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 via-red-600 to-amber-600 text-white font-black text-xs shadow-xs hover:opacity-95 transition cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <Zap className="w-3.5 h-3.5" />
-            <span>{lang === 'ar' ? 'الترقية إلى باقة Pro غير المحدودة والدفع فوراً' : 'Upgrade to Unlimited Pro & Pay'}</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
     </div>
   );
 }

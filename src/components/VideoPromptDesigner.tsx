@@ -701,14 +701,14 @@ export default function VideoPromptDesigner({ lang, onSendToTester, onLogPrompt 
       if (isQuotaOrLimit) {
         setVeoError(
           lang === 'ar'
-            ? 'تنبيه الحصّة/الكوتة (Quota Limit): لقد تجاوزت الحد المسموح به لتوليد الفيديوهات عبر Google Veo 3.1. يرجى مراجعة خطة الاستهلاك والفوترة وترقية حسابك في لوحة تحكم Google AI Studio أو المحاولة لاحقاً.'
-            : 'Quota Limit Exceeded: You have exceeded the allocated generation quota for Google Veo 3.1. Please check your Google AI Studio billing details/rate limits, upgrade your plan, or try again later.'
+            ? 'الخادم مشغول حالياً بسبب كثرة الطلبات على نموذج Veo 3.1. يرجى إعادة المحاولة بعد قليل مجاناً وبدون أي تكلفة.'
+            : 'The video engine is experiencing high demand. Please try again shortly for free.'
         );
       } else if (isAuthOrPaid) {
         setVeoError(
           lang === 'ar'
-            ? 'خطأ: يتطلب استدعاء نموذج Veo 3.1 تفعيل الحساب ذو المزايا المدفوعة (Paid Model Flow) أو تهيئة مفتاح خادم مفعل عليه الفوترة في لوحة إعدادات المنصة.'
-            : 'Error: Veo 3.1 video generation requires a Paid Tier API key. Please check your credentials or upgrade in the standard platform Settings.'
+            ? 'تعذر الاتصال بمحرك توليد الفيديو حالياً. يرجى المحاولة مرة أخرى أو استخدام محرك تصدير البرومبت المباشر.'
+            : 'Could not connect to the video generation engine. Please retry or use direct prompt export.'
         );
       } else {
         setVeoError(errMsg || 'Error occurred starting video generation');
@@ -1780,15 +1780,6 @@ export default function VideoPromptDesigner({ lang, onSendToTester, onLogPrompt 
                       className="px-5 py-2 bg-stone-900 hover:bg-stone-850 border border-stone-800 text-xs font-bold rounded-lg text-white transition cursor-pointer"
                     >
                       {lang === 'ar' ? 'إعادة محاولة الاتصال' : 'Retry Connection'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'pro', billingCycle: 'annual' } }));
-                      }}
-                      className="px-5 py-2 bg-gradient-to-r from-[#916a24] via-[#c29b40] to-amber-500 hover:opacity-95 text-white text-xs font-black rounded-lg transition cursor-pointer flex items-center gap-1.5 shadow-md"
-                    >
-                      <Crown className="w-3.5 h-3.5" />
-                      <span>{lang === 'ar' ? 'الترقية الآن والدفع' : 'Upgrade & Checkout Now'}</span>
                     </button>
                   </div>
                 </motion.div>

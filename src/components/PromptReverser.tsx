@@ -175,18 +175,10 @@ function generateClientSideFallbackPrompt(params: {
   const freePatternPromptClause = params.useFreePattern 
     ? ' [Mode: Free Pattern / النمط المجاني],' 
     : '';
-  const tierBadge = isPaidTier 
-    ? `\n> 👑 **المسار المختار**: الخيار المدفوع الاحترافي (Pro Ultra Tier - دقة 8K استوديو)\n` 
-    : `\n> 🎁 **المسار المختار**: الخيار المجاني (Free Tier - متاح للجميع مجاناً)\n`;
-  const freeTierDirective = !isPaidTier 
-    ? `\n> 📌 **توجيه البرومبت المجاني**: خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k\n> 📌 **Free Prompt Directive**: Take the style from the first image and apply it to the second, and let the image resolution be 8k\n> 📌 **توجيه إضافي**: طبق هذه المعلومات على الصورة الجديدة\n` 
-    : '';
-  const freeTierPromptClause = !isPaidTier 
-    ? 'خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k (Take the style from the first image and apply it to the second, and let the image resolution be 8k):\n' 
-    : '';
-  const tierPromptExtra = isPaidTier 
-    ? ' 8k resolution, Hasselblad H6D-100c 85mm f/1.2 optics, volumetric chiaroscuro studio lighting, commercial advertising grade, master composition,' 
-    : ' 8k resolution, clean balanced lighting, natural texture fidelity, balanced composition,';
+  const tierBadge = `\n> 🎁 **المسار المعتمد**: الخيار المجاني الكامل (Free Tier 100% - دقة 8K استوديو فائقة ومتاح للجميع)\n`;
+  const freeTierDirective = `\n> 📌 **توجيه البرومبت المجاني**: خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k\n> 📌 **Free Prompt Directive**: Take the style from the first image and apply it to the second, and let the image resolution be 8k\n> 📌 **توجيه إضافي**: طبق هذه المعلومات على الصورة الجديدة\n`;
+  const freeTierPromptClause = 'خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k (Take the style from the first image and apply it to the second, and let the image resolution be 8k):\n';
+  const tierPromptExtra = ' 8k resolution, Hasselblad optics simulation, volumetric chiaroscuro studio lighting, commercial grade fidelity, master composition,';
 
   let reversePrompt = '';
   let masterPrompt = '';
@@ -202,8 +194,10 @@ ${masterPrompt}
 \`\`\`
 
 ## 🧠 تحليل ودراسة تقديرية لديناميكية الفيديو:
-- **مسار التوليد**: ${isPaidTier ? 'الخيار المدفوع الاحترافي (Pro Ultra 8K)' : 'الخيار المجاني (Free Tier) - دقة 8K'}
-${!isPaidTier ? '- **توجيه البرومبت المجاني**: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k" (Take the style from the first image and apply it to the second, and let the image resolution be 8k)\n- **توجيه التطبيق**: "طبق هذه المعلومات على الصورة الجديدة"\n' : ''}- **النمط والأسلوب البصري للفيديو**: مشهد سينمائي تفاعلي عالي الحركة والخيال (Cinematic Dynamic Scene).
+- **مسار التوليد**: الخيار المجاني الكامل (Free Tier) - دقة 8K استوديو مجاناً للجميع وبدون اشتراك
+- **توجيه البرومبت المجاني**: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k" (Take the style from the first image and apply it to the second, and let the image resolution be 8k)
+- **توجيه التطبيق**: "طبق هذه المعلومات على الصورة الجديدة"
+- **النمط والأسلوب البصري للفيديو**: مشهد سينمائي تفاعلي عالي الحركة والخيال (Cinematic Dynamic Scene).
 - **حركة الكاميرا وتوجيه الإخراج**: لقطة متحركة دائرية ثنائية التوجيه (Orbital dynamic sweep & tracking) مع تتبع بؤري ذكي وثبات استثنائي.
 - **لوحة الألوان المستخرجة**: ${paletteStr}`;
   } else if (params.reverserMode === 'mimic' || params.includeStyleTransferDirective || Boolean(params.clientCustomChoice)) {
@@ -222,10 +216,12 @@ ${masterPrompt}
 \`\`\`
 
 ## 🧠 تحليل ودراسة فنية لنقل النمط وخيار العميل:
-- **مسار الهندسة العكسية**: ${isPaidTier ? 'الخيار المدفوع الفائق (Pro Ultra 8K) - تركيز هندسي على أدق تفاصيل العدسات والفيزياء البصرية.' : 'الخيار المجاني (Free Tier) - حرية إبداعية كاملة ومتاح لجميع المستخدمين بدقة 8K.'}
+- **مسار الهندسة العكسية**: الخيار المجاني الكامل (Free Tier 100%) - دقة 8K استوديو وحرية إبداعية كاملة متاحة للجميع بدون أي رسوم.
 - **توجيه النمط الأساسي**: "خد النمط من الصورة و طبقه على الصورة المرفقة"
-${!isPaidTier ? '- **توجيه البرومبت المجاني**: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k" (Take the style from the first image and apply it to the second, and let the image resolution be 8k)\n- **توجيه التطبيق**: "طبق هذه المعلومات على الصورة الجديدة"\n' : ''}${params.useFreePattern ? '- **استخدام النمط المجاني (Free Pattern)**: مفعّل كخيار إضافي للمستخدم، مما يتيح أعلى درجات المرونة الإبداعية في دمج الألوان والظلال.' : ''}
-${params.clientCustomChoice ? `- **الخيار المجاني المحدد من قِبل العميل**: "${params.clientCustomChoice}". تم دمجه وتأطيره لضمان الأولوية والتحكم.` : '- **الخيار المجاني**: متاح ومفتوح ليحدده العميل بحرية تامة.'}
+- **توجيه البرومبت المجاني**: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k" (Take the style from the first image and apply it to the second, and let the image resolution be 8k)
+- **توجيه التطبيق**: "طبق هذه المعلومات على الصورة الجديدة"
+${params.useFreePattern ? '- **استخدام النمط المجاني (Free Pattern)**: مفعّل كخيار إضافي للمستخدم، مما يتيح أعلى درجات المرونة الإبداعية في دمج الألوان والظلال.' : ''}
+${params.clientCustomChoice ? `- **الخيار المجاني المحدد من قِبل العميل**: "${params.clientCustomChoice}". تم دمجه وتأطيره لضمان الأولوية والتحكم.` : '- **الخيار المجاني**: متاح ومفتوح ليحدده العميل بحرية تامة وبدون تكلفة.'}
 - **لوحة الألوان المستخرجة (Visual DNA)**: ${paletteStr}
 - **توصيات**: يمكنك نسخ هذا الأمر مباشرة واستخدامه في Midjourney v6.1 أو FLUX.1 أو ChatGPT Vision.`;
   } else if (params.targetStyle === 'photorealistic') {
@@ -239,8 +235,9 @@ ${masterPrompt}
 \`\`\`
 
 ## 🧠 تحليل فني متقدم للصورة:
-- **مسار التوليد**: ${isPaidTier ? 'الخيار المدفوع (Pro Ultra 8K)' : 'الخيار المجاني (Free Tier) - دقة 8K'}
-${!isPaidTier ? '- **توجيه البرومبت المجاني**: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k" (Take the style from the first image and apply it to the second, and let the image resolution be 8k)\n' : ''}- **النوع الفني**: تصوير فوتوغرافي واقعي فائق الدقة (Photorealistic Portrait).
+- **مسار التوليد**: الخيار المجاني الكامل (Free Tier) - دقة 8K استوديو مجاناً وبدون اشتراك
+- **توجيه البرومبت المجاني**: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k" (Take the style from the first image and apply it to the second, and let the image resolution be 8k)
+- **النوع الفني**: تصوير فوتوغرافي واقعي فائق الدقة (Photorealistic Portrait).
 - **العدسات والإضاءة**: عدسة 85mm f/1.2 وإضاءة استوديو حجمية ناعمة بدقة 8K.
 - **لوحة الألوان المستخرجة (Visual DNA)**: ${paletteStr}`;
   } else if (params.targetStyle === 'anime') {
@@ -254,9 +251,10 @@ ${masterPrompt}
 \`\`\`
 
 ## 🧠 تحليل فني تقديري للصورة:
-- **مسار التوليد**: ${isPaidTier ? 'الخيار المدفوع (Pro Ultra 8K)' : 'الخيار المجاني (Free Tier) - دقة 8K'}
+- **مسار التوليد**: الخيار المجاني الكامل (Free Tier) - دقة 8K استوديو مجاناً وبدون اشتراك
 - **نوع الفن**: رسم رقمي أنمي ياباني غني بالألوان (Japanese Anime Style).
-${!isPaidTier ? '- **توجيه البرومبت المجاني**: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k" (Take the style from the first image and apply it to the second, and let the image resolution be 8k)\n' : ''}- **الإضاءة والأجواء**: إضاءة خلفية دافئة (Backlight) مدموجة بوهج الشمس وانعكاسات عدسة سينمائية.
+- **توجيه البرومبت المجاني**: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k" (Take the style from the first image and apply it to the second, and let the image resolution be 8k)
+- **الإضاءة والأجواء**: إضاءة خلفية دافئة (Backlight) مدموجة بوهج الشمس وانعكاسات عدسة سينمائية.
 - **لوحة الألوان المستخرجة (Visual DNA)**: ${paletteStr}`;
   } else if (params.targetStyle === 'logo') {
     masterPrompt = `${freeTierPromptClause}A sophisticated minimalistic vector logo design, bold solid geometric shapes, high contrast clean composition, modern corporate aesthetics, isolated clean background, perfectly centered grid-aligned layout, branding emblem, palette [${paletteStr}], 8k resolution --no realistic details gradient drop-shadows`;
@@ -269,9 +267,10 @@ ${masterPrompt}
 \`\`\`
 
 ## 🧠 تحليل فني تقديري للشعار:
-- **مسار التوليد**: ${isPaidTier ? 'الخيار المدفوع (Pro Ultra 8K)' : 'الخيار المجاني (Free Tier) - دقة 8K'}
+- **مسار التوليد**: الخيار المجاني الكامل (Free Tier) - دقة 8K استوديو مجاناً وبدون اشتراك
 - **نوع الفن**: شعار مسطح مبسط (Flat Minimalistic Vector Logo).
-${!isPaidTier ? '- **توجيه البرومبت المجاني**: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k" (Take the style from the first image and apply it to the second, and let the image resolution be 8k)\n' : ''}- **التكوين**: أشكال هندسية قوية وتصميم قابل للتحجيم للعلامات التجارية.
+- **توجيه البرومبت المجاني**: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k" (Take the style from the first image and apply it to the second, and let the image resolution be 8k)
+- **التكوين**: أشكال هندسية قوية وتصميم قابل للتحجيم للعلامات التجارية.
 - **لوحة الألوان المستخرجة (Visual DNA)**: ${paletteStr}`;
   } else {
     masterPrompt = `${freeTierPromptClause}An exquisite high-fidelity masterpiece depicting the uploaded subject, cinematic composition, pristine surface details, highly balanced ambient lighting, deep atmospheric focus, color harmony [${paletteStr}], designed for maximum output accuracy, professional rendering standard, 8k resolution --ar 16:9`;
@@ -284,9 +283,10 @@ ${masterPrompt}
 \`\`\`
 
 ## 🧠 تحليل ودراسة فنية للصورة:
-- **مسار التوليد**: ${isPaidTier ? 'الخيار المدفوع (Pro Ultra 8K)' : 'الخيار المجاني (Free Tier) - دقة 8K'}
+- **مسار التوليد**: الخيار المجاني الكامل (Free Tier) - دقة 8K استوديو مجاناً وبدون اشتراك
 - **نوع الفن**: تصميم رسومي مركب متعدد الوسائط (Mixed Media Composition).
-${!isPaidTier ? '- **توجيه البرومبت المجاني**: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k" (Take the style from the first image and apply it to the second, and let the image resolution be 8k)\n' : ''}- **لوحة الألوان المستخرجة (Visual DNA)**: ${paletteStr}`;
+- **توجيه البرومبت المجاني**: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k" (Take the style from the first image and apply it to the second, and let the image resolution be 8k)
+- **لوحة الألوان المستخرجة (Visual DNA)**: ${paletteStr}`;
   }
 
   return {
@@ -677,26 +677,6 @@ export default function PromptReverser({ lang, onSendToTester, onNavigateToBuild
     // Tier Access Check:
     // The Paid Pro Ultra tier requires an active plan (Lite or Pro)
     // The Free tier is available for everyone 100% without subscription barrier
-    if (activeTier === 'paid') {
-      const quota = checkGenerationQuota();
-      if (!quota.allowed) {
-        if (quota.requiresSubscription) {
-          setErrorMsg(
-            lang === 'ar'
-              ? '👑 الخيار المدفوع (Pro Ultra 8K) يتطلب اشتراكاً نشطاً. يمكنك الترقية الآن للاستفادة من دقة الاستوديو الفائقة، أو استخدام "الخيار المجاني" المتاح مجاناً للجميع بدون اشتراك.'
-              : '👑 The Paid Pro Ultra option requires an active plan. You can upgrade now or switch to the Free Option available for everyone.'
-          );
-        } else {
-          setErrorMsg(
-            lang === 'ar'
-              ? `🛑 لقد استهلكت كامل حصتك اليومية (${quota.max} طلباً). يرجى ترقية باقتك للاستمرار بالخيار المدفوع، أو التبديل إلى الخيار المجاني.`
-              : `🛑 Daily quota reached (${quota.max} requests). Please upgrade or use the Free Option.`
-          );
-        }
-        return;
-      }
-    }
-
     setLoading(true);
     setErrorMsg('');
     setExtractedPrompt('');
@@ -1151,143 +1131,53 @@ export default function PromptReverser({ lang, onSendToTester, onNavigateToBuild
               <span>{lang === 'ar' ? 'خيارات وتوجيه المحرك العكسي' : '2. Reverse Prompt Style Parameters'}</span>
             </h3>
 
-            {/* DUAL TIER SELECTOR: الخيار المدفوع والخيار المجاني معاً */}
-            <div className="mb-6 p-4 rounded-2xl bg-stone-50/90 border border-stone-200/90 shadow-2xs space-y-3">
+            {/* UNIFIED 100% FREE TIER BANNER: الخيار المجاني فقط */}
+            <div className="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 shadow-2xs space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">⚖️</span>
+                  <span className="text-base">🎁</span>
                   <span className="text-xs sm:text-sm font-black text-stone-900">
-                    {lang === 'ar' ? 'مسار الهندسة العكسية (الخيار المجاني والمدفوع متاحان معاً):' : 'Reverse Engineering Track (Free & Paid Tiers Together):'}
+                    {lang === 'ar' ? 'الخيار المجاني الفائق 100% (Free Option Only):' : '100% Free Option Only:'}
                   </span>
                 </div>
-                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-stone-200 text-stone-700">
-                  {lang === 'ar' ? 'اختر المسار المناسب' : 'Dual Tier System'}
+                <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  {lang === 'ar' ? 'مجاني بالكامل للجميع وبدون مفتاح' : '100% Free Forever'}
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* 1. الخيار المجاني (Free Option) */}
-                <div
-                  onClick={() => {
-                    setReverserTier('free');
-                    setErrorMsg('');
-                  }}
-                  className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer relative flex flex-col justify-between ${
-                    reverserTier === 'free'
-                      ? 'bg-emerald-50/80 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20'
-                      : 'bg-white border-stone-200 hover:border-emerald-300 hover:bg-stone-50/60'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-1 mb-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-base shrink-0">🎁</span>
-                        <span className="text-xs font-black text-stone-900">
-                          {lang === 'ar' ? 'الخيار المجاني (Free Tier)' : 'Free Option (Free Tier)'}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
-                        {lang === 'ar' ? 'مجاني للجميع 100%' : '100% Free'}
-                      </span>
-                    </div>
-
-                    <p className="text-[11px] text-stone-600 mb-2 leading-relaxed">
-                      {lang === 'ar' 
-                        ? 'استخلاص النمط البصري الأساسي وتوليد برومبت واضح ومباشر، متاح دائماً بدون اشتراك وبلا قيود.'
-                        : 'Extract baseline visual style into an unconstrained prompt, completely free forever with no subscription barrier.'}
-                    </p>
-
-                    <ul className="space-y-1 text-[10px] text-stone-600 mb-2.5">
-                      <li className="flex items-center gap-1.5 text-emerald-800 font-bold bg-emerald-100/90 px-2 py-1.5 rounded-md border border-emerald-300">
-                        <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                        <span>{lang === 'ar' ? 'توجيه البرومبت: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k"' : 'Directive: "Take the style from the first image and apply it to the second, and let the image resolution be 8k"'}</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <Check className="w-3 h-3 text-emerald-600 shrink-0" />
-                        <span>{lang === 'ar' ? 'تفكيك النمط الأساسي مجاناً' : 'Free baseline style deconstruction'}</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <Check className="w-3 h-3 text-emerald-600 shrink-0" />
-                        <span>{lang === 'ar' ? 'دعم خيار العميل الحر والنمط المجاني' : 'Client free choice & free pattern support'}</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <Check className="w-3 h-3 text-emerald-600 shrink-0" />
-                        <span>{lang === 'ar' ? 'متاح دائماً بدون بطاقة بنكية أو اشتراك' : 'No credit card or subscription required'}</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="pt-2 border-t border-emerald-100/80 flex items-center justify-between">
-                    <span className="text-[11px] font-black text-emerald-700">
-                      {lang === 'ar' ? '$0 / مجاني دائماً' : '$0 / Always Free'}
-                    </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                      reverserTier === 'free' ? 'bg-emerald-600 text-white font-black shadow-2xs' : 'bg-stone-100 text-stone-500'
-                    }`}>
-                      {reverserTier === 'free' ? (lang === 'ar' ? '✓ تم الاختيار' : '✓ Selected') : (lang === 'ar' ? 'اختيار' : 'Select')}
+              <div className="p-3.5 rounded-xl bg-white border border-emerald-200 shadow-xs">
+                <div className="flex items-center justify-between gap-1 mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-[#c29b40] shrink-0" />
+                    <span className="text-xs font-black text-stone-900">
+                      {lang === 'ar' ? 'هندسة عكسية متقدمة بدقة 8K استوديو ومصفوفة Visual DNA' : 'Advanced 8K Studio Reverse Engineering & Visual DNA'}
                     </span>
                   </div>
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white shrink-0">
+                    {lang === 'ar' ? '$0 / مجاني دائماً' : '$0 / Always Free'}
+                  </span>
                 </div>
 
-                {/* 2. الخيار المدفوع الاحترافي (Paid Option) */}
-                <div
-                  onClick={() => {
-                    setReverserTier('paid');
-                    setErrorMsg('');
-                  }}
-                  className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer relative flex flex-col justify-between ${
-                    reverserTier === 'paid'
-                      ? 'bg-amber-50/90 border-[#c29b40] shadow-sm ring-2 ring-[#c29b40]/25'
-                      : 'bg-white border-stone-200 hover:border-amber-300 hover:bg-stone-50/60'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-1 mb-2">
-                      <div className="flex items-center gap-1.5">
-                        <Crown className="w-4 h-4 text-[#c29b40] shrink-0" />
-                        <span className="text-xs font-black text-stone-900">
-                          {lang === 'ar' ? 'الخيار المدفوع (Pro Ultra)' : 'Paid Option (Pro Ultra)'}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-[#8c6722] border border-amber-300 flex items-center gap-0.5 shrink-0">
-                        <span>👑</span>
-                        <span>{lang === 'ar' ? 'دقة 8K استوديو' : '8K Studio'}</span>
-                      </span>
-                    </div>
+                <p className="text-[11px] text-stone-600 mb-2 leading-relaxed">
+                  {lang === 'ar' 
+                    ? 'فك تشفير كامل للنمط البصري، محاكاة فيزياء الإضاءة وعدسات الاستوديو، ونقل الأسلوب المباشر، متاح مجاناً لجميع المستخدمين بلا قيود، بدون اشتراكات، وبدون الحاجة لمفتاح API.'
+                    : 'Complete visual style deconstruction, studio optics simulation, and direct style transfer — 100% free with no subscriptions or API key required.'}
+                </p>
 
-                    <p className="text-[11px] text-stone-600 mb-2 leading-relaxed">
-                      {lang === 'ar'
-                        ? 'فك تشفير عميق لمصفوفة Visual DNA، وفيزياء الإضاءة الحجمية وعدسات هاسلبلاد وأري أليكسا للإعلانات التجارية الفاخرة.'
-                        : 'Deep Visual DNA matrix extraction with studio volumetric ray-tracing, Hasselblad optics, and high-converting commercial prompts.'}
-                    </p>
-
-                    <ul className="space-y-1 text-[10px] text-stone-600 mb-2.5">
-                      <li className="flex items-center gap-1.5">
-                        <Sparkles className="w-3 h-3 text-[#c29b40] shrink-0" />
-                        <span>{lang === 'ar' ? 'استخراج مصفوفة Visual DNA كاملة' : 'Complete Visual DNA matrix extraction'}</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <Sparkles className="w-3 h-3 text-[#c29b40] shrink-0" />
-                        <span>{lang === 'ar' ? 'محاكاة عدسات استوديو هاسلبلاد 85mm f/1.2' : 'Hasselblad 85mm f/1.2 lens simulation'}</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <Sparkles className="w-3 h-3 text-[#c29b40] shrink-0" />
-                        <span>{lang === 'ar' ? 'أولوية معالجة فورية وتوليد فائق' : 'Priority instant processing speed'}</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="pt-2 border-t border-amber-100/80 flex items-center justify-between">
-                    <span className="text-[11px] font-black text-[#8c6722]">
-                      {lang === 'ar' ? 'باقة Pro & Lite الاحترافية' : 'Pro & Lite Creator'}
-                    </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                      reverserTier === 'paid' ? 'bg-[#c29b40] text-stone-950 font-black shadow-2xs' : 'bg-stone-100 text-stone-500'
-                    }`}>
-                      {reverserTier === 'paid' ? (lang === 'ar' ? '✓ تم الاختيار' : '✓ Selected') : (lang === 'ar' ? 'اختيار' : 'Select')}
-                    </span>
-                  </div>
-                </div>
+                <ul className="space-y-1.5 text-[10px] text-stone-600">
+                  <li className="flex items-center gap-1.5 text-emerald-800 font-bold bg-emerald-50 px-2 py-1.5 rounded-md border border-emerald-300">
+                    <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                    <span>{lang === 'ar' ? 'توجيه البرومبت: "خد من الصورة الأولى النمط و طبقه على التانية و لتكون دقة الصورة 8k"' : 'Directive: "Take the style from the first image and apply it to the second, and let the image resolution be 8k"'}</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                    <span>{lang === 'ar' ? 'استخراج مصفوفة Visual DNA ولوحة الألوان السداسية بدقة 8K' : 'Visual DNA matrix and 8K color extraction'}</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                    <span>{lang === 'ar' ? 'دعم نقل النمط وخيار العميل الحر' : 'Style transfer & client free choice supported'}</span>
+                  </li>
+                </ul>
               </div>
             </div>
 
@@ -1544,32 +1434,8 @@ export default function PromptReverser({ lang, onSendToTester, onNavigateToBuild
 
             {/* ERROR MSG */}
             {errorMsg && (
-              <div className="mt-4 p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-200 text-xs rounded-xl leading-relaxed text-right rtl:text-right space-y-2.5">
+              <div className="mt-4 p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-200 text-xs rounded-xl leading-relaxed text-right rtl:text-right">
                 <div className="font-medium">{errorMsg}</div>
-                <div className="pt-2 border-t border-rose-200/60 dark:border-rose-900/40 flex flex-wrap gap-2 justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setReverserTier('free');
-                      setErrorMsg('');
-                      handleAnalyzeImage('free');
-                    }}
-                    className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-stone-50 border border-stone-300 text-stone-800 font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
-                  >
-                    <span>⚡</span>
-                    <span>{lang === 'ar' ? 'التبديل إلى الخيار المجاني والمتابعة' : 'Switch to Free Option & Continue'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'pro', billingCycle: 'annual' } }));
-                    }}
-                    className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#916a24] via-[#c29b40] to-amber-500 text-white font-black text-xs shadow-md hover:opacity-95 cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Crown className="w-3.5 h-3.5" />
-                    <span>{lang === 'ar' ? 'ترقية باقتك إلى Pro' : 'Upgrade to Pro'}</span>
-                  </button>
-                </div>
               </div>
             )}
 
@@ -1583,9 +1449,7 @@ export default function PromptReverser({ lang, onSendToTester, onNavigateToBuild
                     ? 'bg-stone-300 cursor-not-allowed text-stone-500 shadow-none border-stone-300'
                     : loading
                       ? 'bg-stone-800 cursor-wait'
-                      : reverserTier === 'paid'
-                        ? 'bg-gradient-to-r from-[#916a24] via-[#c29b40] to-amber-600 hover:opacity-95 active:scale-[0.98]'
-                        : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98]'
+                      : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98]'
                 }`}
               >
                 {loading ? (
@@ -1601,32 +1465,19 @@ export default function PromptReverser({ lang, onSendToTester, onNavigateToBuild
                   </>
                 ) : (
                   <>
-                    {reverserTier === 'paid' ? (
-                      <Crown className="w-4 h-4 text-amber-200 animate-pulse" />
-                    ) : (
-                      <Sparkles className="w-4 h-4 text-emerald-200 animate-pulse" />
-                    )}
+                    <Sparkles className="w-4 h-4 text-emerald-200 animate-pulse" />
                     <span>
-                      {reverserTier === 'paid'
-                        ? (lang === 'ar' ? 'تشغيل الهندسة العكسية الفائقة (الخيار المدفوع 8K Pro) (Ctrl+Enter)' : 'Run Deep Reverse Engineering (Paid Pro 8K) (Ctrl+Enter)')
-                        : (lang === 'ar' ? 'تشغيل الهندسة العكسية المجانية (الخيار المجاني Free) (Ctrl+Enter)' : 'Run Free Reverse Engineering (Free Option) (Ctrl+Enter)')}
+                      {lang === 'ar' ? 'تشغيل الهندسة العكسية (الخيار المجاني 100%) (Ctrl+Enter)' : 'Run Free Reverse Engineering (Ctrl+Enter)'}
                     </span>
                   </>
                 )}
               </button>
 
               <div className="mt-2 text-center text-[10px]">
-                {reverserTier === 'paid' ? (
-                  <span className="text-[#8c6722] font-semibold flex items-center justify-center gap-1">
-                    <Crown className="w-3 h-3 text-[#c29b40]" />
-                    <span>{lang === 'ar' ? 'الخيار المدفوع نشط: دقة سينمائية 8K وفيزياء استوديو متقدمة' : 'Paid Pro Tier active: 8K studio fidelity & lens physics'}</span>
-                  </span>
-                ) : (
-                  <span className="text-emerald-700 font-semibold flex items-center justify-center gap-1">
-                    <span>🎁</span>
-                    <span>{lang === 'ar' ? 'الخيار المجاني نشط: متاح للجميع 100% مع عبارة "خد النمط من الصورة و طبقه على الصورة المرفقة"' : 'Free Tier active: 100% free for everyone with style transfer directive'}</span>
-                  </span>
-                )}
+                <span className="text-emerald-700 font-semibold flex items-center justify-center gap-1">
+                  <span>🎁</span>
+                  <span>{lang === 'ar' ? 'الخيار المجاني نشط 100%: دقة 8K استوديو مجاناً بدون اشتراك وبدون مفتاح' : 'Free Option 100% Active: 8K studio quality without subscription or API key'}</span>
+                </span>
               </div>
             </div>
 
@@ -1854,38 +1705,18 @@ export default function PromptReverser({ lang, onSendToTester, onNavigateToBuild
                     </div>
                   )}
 
-                  {/* Generation Tier Badge (Free vs Paid) */}
+                  {/* Generation Tier Badge (Free 100%) */}
                   {lastGeneratedTier && (
-                    <div className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 text-xs shadow-2xs ${
-                      lastGeneratedTier === 'paid'
-                        ? 'bg-gradient-to-r from-amber-50 via-amber-100/50 to-amber-50 border-amber-300 text-[#8c6722]'
-                        : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                    }`}>
+                    <div className="p-2.5 rounded-xl border flex items-center justify-between gap-2 text-xs shadow-2xs bg-emerald-50 border-emerald-200 text-emerald-800">
                       <div className="flex items-center gap-2">
-                        {lastGeneratedTier === 'paid' ? (
-                          <Crown className="w-4 h-4 text-[#c29b40] shrink-0" />
-                        ) : (
-                          <span className="text-base shrink-0">🎁</span>
-                        )}
+                        <span className="text-base shrink-0">🎁</span>
                         <span className="font-black text-xs">
-                          {lastGeneratedTier === 'paid'
-                            ? (lang === 'ar' ? '👑 تم التوليد بنجاح عبر: الخيار المدفوع الاحترافي (Pro Ultra 8K)' : '👑 Generated via: Paid Pro Ultra Tier (8K Studio Quality)')
-                            : (lang === 'ar' ? '🎁 تم التوليد بنجاح عبر: الخيار المجاني (Free Tier)' : '🎁 Generated via: Free Tier (Unconstrained)')}
+                          {lang === 'ar' ? '🎁 تم التوليد بنجاح عبر: الخيار المجاني الكامل (Free Tier 8K Studio)' : '🎁 Generated via: 100% Free Tier (8K Studio Quality)'}
                         </span>
                       </div>
-                      {lastGeneratedTier === 'free' && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setReverserTier('paid');
-                            setErrorMsg('');
-                          }}
-                          className="text-[10px] font-bold text-[#8c6722] hover:underline cursor-pointer flex items-center gap-1 shrink-0 bg-white/80 px-2 py-0.5 rounded-lg border border-amber-200 shadow-2xs"
-                        >
-                          <Crown className="w-3 h-3 text-[#c29b40]" />
-                          <span>{lang === 'ar' ? 'جرّب الخيار المدفوع 8K' : 'Try Paid 8K'}</span>
-                        </button>
-                      )}
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                        {lang === 'ar' ? 'مجاني 100%' : '100% Free'}
+                      </span>
                     </div>
                   )}
 

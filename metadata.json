@@ -1,6 +1,6 @@
 {
   "name": "arabprompt",
-  "description": "منصة احترافية مدفوعة بالكامل لتوليد وهندسة الأوامر الرقمية والسينمائية (Prompts) بدقة فائقة وبدون إعلانات.",
+  "description": "منصة احترافية مجانية بالكامل لتوليد وهندسة الأوامر الرقمية والسينمائية (Prompts) بدقة فائقة وبدون إعلانات وبدون مفتاح.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

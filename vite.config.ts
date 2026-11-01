@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-const base = '/ArabPromptdawAi/';
+const base = process.env.GITHUB_ACTIONS || process.env.GITHUB_PAGES ? '/ArabPromptdawAi/' : './';
 
 const rootDir = path.dirname(
   fileURLToPath(import.meta.url)
@@ -32,7 +32,7 @@ export default defineConfig(() => ({
         short_name: 'Arabiprompt',
 
         description:
-          'منصة عربية احترافية لهندسة الأوامر وإنشاء برومبتات الصور والفيديو',
+          'منصة عربية احترافية مجانية بالكامل لهندسة الأوامر وإنشاء برومبتات الصور والفيديو',
 
         lang: 'ar',
         dir: 'rtl',
@@ -76,17 +76,10 @@ export default defineConfig(() => ({
       },
 
       workbox: {
-        maximumFileSizeToCacheInBytes:
-          5 * 1024 * 1024,
+        maximumFileSizeToCacheInBytes: 25 * 1024 * 1024,
 
         globPatterns: [
           '**/*.{js,css,html,ico,png,jpg,jpeg,webp,svg,woff,woff2}',
-        ],
-
-        navigateFallback: `${base}index.html`,
-
-        navigateFallbackDenylist: [
-          /^\/api\//,
         ],
 
         cleanupOutdatedCaches: true,
@@ -167,7 +160,29 @@ export default defineConfig(() => ({
     cssMinify: true,
     minify: 'esbuild',
 
-    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/firebase')) {
+            return 'vendor-firebase';
+          }
+          if (id.includes('node_modules/prismjs') || id.includes('node_modules/react-markdown')) {
+            return 'vendor-syntax';
+          }
+          if (id.includes('node_modules/motion')) {
+            return 'vendor-motion';
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-lucide';
+          }
+        },
+      },
+    },
+
+    chunkSizeWarningLimit: 1200,
   },
 
   server: {

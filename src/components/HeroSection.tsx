@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Sparkles, Crown, Zap, Shield, Film, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Crown, Zap, Shield, Film, CheckCircle2, ExternalLink } from 'lucide-react';
 import { AppLanguage } from '../types';
 
 interface HeroSectionProps {
@@ -26,17 +26,17 @@ export default function HeroSection({ lang, onGetStarted }: HeroSectionProps) {
           <div className="space-y-2 text-center md:text-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#c29b40]/20 border border-[#c29b40]/40 text-amber-300 text-[11px] font-black">
               <Crown className="w-3.5 h-3.5 text-[#c29b40]" />
-              <span>{isAr ? 'منصة احترافية مدفوعة بالكامل 100% | جودة سينمائية فائقة' : '100% Paid Platform | Cinematic Ultra-HD AI'}</span>
+              <span>{isAr ? 'منصة عربية احترافية مجانية بالكامل 100% | جودة سينمائية فائقة' : '100% Free Professional Platform | Cinematic Ultra-HD AI'}</span>
             </div>
             
             <h3 className="text-lg sm:text-xl font-black tracking-tight text-white">
-              {isAr ? 'أدوات هندسة الأوامر الرقمية المخصصة للمشتركين فقط' : 'Dedicated Prompt Engineering Tools for Paid Members'}
+              {isAr ? 'أدوات هندسة الأوامر الرقمية والسينمائية المتقدمة للجميع مجاناً' : 'Cinematic & Digital Prompt Engineering Tools — Free for Everyone'}
             </h3>
             
             <p className="text-xs text-stone-300 max-w-2xl leading-relaxed">
               {isAr 
-                ? 'استمتع بخوادم حصرية سريعة، صياغة برومبتات مزدوجة (مباشرة وهندسية)، استوديو سينمائي متكامل، وبدون أي إعلانات.'
-                : 'Experience reserved low-latency GPU compute, dual-mode prompts, 4K screenplay studio, and a 100% ad-free creative workflow.'}
+                ? 'استمتع بخوادم سريعة، صياغة برومبتات مزدوجة (مباشرة وهندسية)، استوديو سينمائي متكامل، وبدون أي إعلانات أو متطلبات دفع.'
+                : 'Experience reserved low-latency AI models, dual-mode prompts, 4K screenplay studio, and a 100% free, ad-free workflow.'}
             </p>
           </div>
 
@@ -45,22 +45,27 @@ export default function HeroSection({ lang, onGetStarted }: HeroSectionProps) {
               <button
                 type="button"
                 onClick={onGetStarted}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#916a24] via-[#c29b40] to-amber-500 hover:opacity-95 text-white font-black text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#916a24] via-[#c29b40] to-amber-500 hover:opacity-95 text-white font-black text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>{isAr ? 'ابدأ الآن' : 'Get Started'}</span>
+                <span>{isAr ? 'ابدأ في مهندس الأوامر' : 'Launch Prompt Engineer'}</span>
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'pro', billingCycle: 'annual' } }));
-              }}
-              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+
+            <a
+              href="https://adwwaw-creator.github.io/PromteFree/"
+              target="_blank"
+              rel="noopener noreferrer"
+              id="hero-promtefree-link"
+              className="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 hover:text-white font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              title={isAr ? 'PromteFree — أداة برومبت فري المجانية' : 'PromteFree — Free Tool'}
             >
-              <Crown className="w-3.5 h-3.5 text-amber-400" />
-              <span>{isAr ? 'اشترك الآن والدفع' : 'Subscribe & Pay'}</span>
-            </button>
+              <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+              <span>PromteFree</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-600 text-white font-black leading-none">
+                {isAr ? 'مجاني ↗' : 'Free ↗'}
+              </span>
+            </a>
           </div>
         </div>
 

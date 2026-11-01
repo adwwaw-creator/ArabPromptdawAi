@@ -169,13 +169,13 @@ export async function safeParseFetchResponse<T = any>(
         case 401:
         case 403:
           friendlyError = isAr 
-            ? 'خطأ في المصادقة أو صلاحيات مفتاح API. تم تفعيل الوضع التوليدي المحلي الآمن تلقائياً.' 
-            : 'Authentication or quota issue. Local resilient generator activated.';
+            ? 'خطأ مؤقت في الاتصال بالخدمة السحابية. تم تفعيل الوضع التوليدي المحلي الآمن تلقائياً وبشكل مجاني.' 
+            : 'Temporary cloud connection issue. Local resilient generator activated for free.';
           break;
         case 429:
           friendlyError = isAr 
-            ? 'تم تجاوز حد الاستهلاك المسموح حالياً. يمكنك الترقية أو الانتظار قليلاً.' 
-            : 'Rate limit exceeded. Please wait or upgrade your plan.';
+            ? 'الخادم مشغول حالياً بسبب كثافة الطلبات. يرجى الانتظار بضع ثوانٍ وإعادة المحاولة مجاناً.' 
+            : 'The engine is busy due to high demand. Please wait a moment and try again for free.';
           break;
         case 500:
         case 502:

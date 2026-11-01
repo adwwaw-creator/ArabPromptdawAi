@@ -241,7 +241,7 @@ export default function PromptTester({ lang, passedPrompt, onLogPrompt }: Prompt
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'فشلت تجربة الأمر. يرجى مراجعة حالة مفتاح الـ API.');
+        throw new Error(data.error || 'فشلت تجربة الأمر. يرجى إعادة المحاولة.');
       }
 
       setTestResult(data.response);

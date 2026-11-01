@@ -59,7 +59,6 @@ interface AuthModalProps {
   onAuthSuccess?: (user: User) => void;
   onLogout?: () => void;
   onOpenApiDashboard?: () => void;
-  onOpenCheckout?: (plan?: SubscriptionPlan) => void;
 }
 
 export default function AuthModal({
@@ -71,8 +70,7 @@ export default function AuthModal({
   isMandatory: customIsMandatory,
   onAuthSuccess,
   onLogout,
-  onOpenApiDashboard,
-  onOpenCheckout
+  onOpenApiDashboard
 }: AuthModalProps) {
   const isEmailVerified = Boolean(
     currentUser && (
@@ -83,7 +81,7 @@ export default function AuthModal({
 
   const isMandatory = customIsMandatory !== undefined ? customIsMandatory : (!currentUser || !isEmailVerified);
 
-  const [activeTab, setActiveTab] = useState<'usage' | 'profile' | 'plans'>(
+  const [activeTab, setActiveTab] = useState<'usage' | 'profile'>(
     initialMode === 'login' || initialMode === 'signup' || initialMode === 'profile' || (currentUser && !isEmailVerified) ? 'profile' : 'usage'
   );
 
@@ -513,19 +511,6 @@ export default function AuthModal({
               >
                 <Activity className="w-3.5 h-3.5" />
                 <span>{lang === 'ar' ? 'مراقبة الرصيد' : 'Usage & Quota'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('plans')}
-                className={`flex items-center gap-1.5 py-2 px-3 border-b-2 text-xs font-black transition cursor-pointer ${
-                  activeTab === 'plans'
-                    ? 'border-[#c29b40] text-[#916a24] dark:text-amber-400'
-                    : 'border-transparent text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'
-                }`}
-              >
-                <Crown className="w-3.5 h-3.5 text-amber-500" />
-                <span>{lang === 'ar' ? 'الباقات والترقية' : 'Plans & Upgrade'}</span>
               </button>
             </div>
           )
@@ -1125,10 +1110,6 @@ export default function AuthModal({
               <ApiUsageMonitor
                 lang={lang}
                 subscription={sub}
-                onOpenCheckout={(plan) => {
-                  onClose();
-                  if (onOpenCheckout) onOpenCheckout(plan);
-                }}
               />
 
               {/* Admin API Cost Analytics Access */}
@@ -1145,155 +1126,6 @@ export default function AuthModal({
                     <BarChart3 className="w-4 h-4 text-[#c29b40]" />
                     <span>{lang === 'ar' ? '📊 لوحة تحليلات تكاليف الـ API المتقدمة' : '📊 Advanced API Cost & Token Analytics'}</span>
                   </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 3: PLANS & UPGRADE */}
-          {activeTab === 'plans' && (
-            <div className="space-y-3">
-              <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/10 via-[#c29b40]/15 to-amber-500/10 border border-[#c29b40]/30 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold text-stone-500 dark:text-stone-400 block">
-                    {lang === 'ar' ? 'باقتك الحالية:' : 'Current Plan:'}
-                  </span>
-                  <div className="text-sm font-black text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
-                    <Crown className="w-4 h-4 text-[#c29b40]" />
-                    <span>{PLAN_LIMITS[sub.plan].nameAr}</span>
-                  </div>
-                </div>
-
-                <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold ${
-                  sub.plan !== 'free'
-                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                    : 'bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-300'
-                }`}>
-                  {sub.plan !== 'free' ? (lang === 'ar' ? 'اشتراك نشط ⭐' : 'Active Plan') : (lang === 'ar' ? 'مجاني' : 'Free')}
-                </span>
-              </div>
-
-              {/* Quick Plan Choices */}
-              <div className="space-y-2 pt-1">
-                {/* Lite Option */}
-                <div className={`p-3 rounded-2xl border transition-all flex items-center justify-between ${
-                  sub.plan === 'lite' 
-                    ? 'border-[#c29b40] bg-[#c29b40]/10 ring-1 ring-[#c29b40]' 
-                    : 'border-stone-200 dark:border-stone-800 hover:border-[#c29b40]/50 bg-white dark:bg-stone-900'
-                }`}>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-black text-stone-900 dark:text-stone-100">
-                        {PLAN_LIMITS.lite.nameAr}
-                      </span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 font-bold">
-                        {lang === 'ar' ? 'أرخص باقة ⚡' : 'Best Value'}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-stone-500 dark:text-stone-400">
-                      {lang === 'ar' ? '100 طلب/يوم + هندسة عكسية + تصدير PDF' : '100 prompts/day + Reverse + PDF Export'}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-xs font-black text-stone-900 dark:text-stone-100">
-                      $5<span className="text-[9px] font-normal text-stone-400">/شهر</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        if (onOpenCheckout) onOpenCheckout('lite');
-                        window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'lite' } }));
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#916a24] to-[#c29b40] text-white text-[10px] font-black hover:opacity-95 cursor-pointer"
-                    >
-                      {sub.plan === 'lite' ? (lang === 'ar' ? 'باقتك الحالية' : 'Current') : (lang === 'ar' ? 'اختيار' : 'Select')}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Pro Option */}
-                <div className={`p-3 rounded-2xl border transition-all flex items-center justify-between ${
-                  sub.plan === 'pro' 
-                    ? 'border-[#c29b40] bg-[#c29b40]/10 ring-1 ring-[#c29b40]' 
-                    : 'border-stone-200 dark:border-stone-800 hover:border-[#c29b40]/50 bg-white dark:bg-stone-900'
-                }`}>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-black text-stone-900 dark:text-stone-100">
-                        {PLAN_LIMITS.pro.nameAr}
-                      </span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 font-bold">
-                        {lang === 'ar' ? 'غير محدود ⭐' : 'Unlimited'}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-stone-500 dark:text-stone-400">
-                      {lang === 'ar' ? 'طلبات غير محدودة + تثبيت الوجوه والشخصيات' : 'Unlimited prompts + Face Anchor'}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-xs font-black text-stone-900 dark:text-stone-100">
-                      $7<span className="text-[9px] font-normal text-stone-400">/شهر</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        if (onOpenCheckout) onOpenCheckout('pro');
-                        window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'pro' } }));
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-[#c29b40] text-white text-[10px] font-black hover:opacity-95 cursor-pointer"
-                    >
-                      {sub.plan === 'pro' ? (lang === 'ar' ? 'باقتك الحالية' : 'Current') : (lang === 'ar' ? 'اختيار' : 'Select')}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Studio Option */}
-                <div className={`p-3 rounded-2xl border transition-all flex items-center justify-between ${
-                  sub.plan === 'studio' 
-                    ? 'border-[#c29b40] bg-[#c29b40]/10 ring-1 ring-[#c29b40]' 
-                    : 'border-stone-200 dark:border-stone-800 hover:border-[#c29b40]/50 bg-white dark:bg-stone-900'
-                }`}>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-black text-stone-900 dark:text-stone-100">
-                        {PLAN_LIMITS.studio.nameAr}
-                      </span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950 text-purple-700 font-bold">
-                        {lang === 'ar' ? 'مفتاح API خاص' : 'REST API Key'}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-stone-500 dark:text-stone-400">
-                      {lang === 'ar' ? 'استوديو كامل + تكامل برمجي مباشر' : 'Full studio + API endpoint integration'}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-xs font-black text-stone-900 dark:text-stone-100">
-                      $24<span className="text-[9px] font-normal text-stone-400">/شهر</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        if (onOpenCheckout) onOpenCheckout('studio');
-                        window.dispatchEvent(new CustomEvent('open-checkout', { detail: { plan: 'studio' } }));
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 text-[10px] font-black hover:opacity-95 cursor-pointer"
-                    >
-                      {sub.plan === 'studio' ? (lang === 'ar' ? 'باقتك الحالية' : 'Current') : (lang === 'ar' ? 'اختيار' : 'Select')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {sub.plan !== 'free' && (
-                <div className="pt-2 text-center">
-                  <p className="text-[11px] text-stone-500">
-                    {lang === 'ar' 
-                      ? `ينتهي اشتراكك الحالي أو يتجدد في: ${new Date(sub.renewalDate).toLocaleDateString('ar-EG')}` 
-                      : `Renewal date: ${new Date(sub.renewalDate).toLocaleDateString()}`}
-                  </p>
                 </div>
               )}
             </div>

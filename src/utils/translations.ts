@@ -108,8 +108,8 @@ export interface TranslationDictionary {
 export const TRANSLATIONS: Record<AppLanguage, TranslationDictionary> = {
   ar: {
     appTitle: 'ArabPrompt',
-    appBadge: '💎 مدفوع بالكامل',
-    appTagline: 'المنصة الاحترافية المدفوعة بالكامل لهندسة وصياغة الأوامر الذكية',
+    appBadge: '✨ مجاني 100%',
+    appTagline: 'المنصة الاحترافية المجانية بالكامل لهندسة وصياغة الأوامر الذكية',
     navDawai: 'بوابة DawAi',
     navBuilder: 'مُهندس الأوامر',
     navCinema: 'أفلام وسيناريو AI',

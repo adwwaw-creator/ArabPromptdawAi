@@ -192,8 +192,8 @@ async function initiatePwaPayment() {
 
   const paymentDetails = {
     total: {
-      label: 'عرب برومبت - باقة المحترفين PRO',
-      amount: { currency: 'USD', value: '19.00' }
+      label: 'تطبيق تجريبي - ترقية العضوية (نموذج تعليمي)',
+      amount: { currency: 'USD', value: '0.00' }
     }
   };
 

@@ -58,23 +58,20 @@ export const showToast = (
   }
 };
 
-// Utility function to explicitly trigger a quota warning toast
+// Utility function to explicitly trigger a quota warning toast (disabled: platform is 100% free)
 export const showQuotaWarningToast = (
-  threshold: 80 | 90 | 100,
-  remaining: number,
-  max: number,
-  plan: SubscriptionPlan = 'free'
+  _threshold: 80 | 90 | 100,
+  _remaining: number,
+  _max: number,
+  _plan: SubscriptionPlan = 'free'
 ) => {
-  const event = new CustomEvent('quota-threshold-reached', {
-    detail: { threshold, remaining, max, plan }
-  });
-  window.dispatchEvent(event);
+  // No-op: ArabPrompt is 100% free with unlimited generation
 };
 
 export const ToastNotification: React.FC<{ 
   lang: AppLanguage;
   onOpenCheckout?: (plan?: SubscriptionPlan) => void;
-}> = ({ lang, onOpenCheckout }) => {
+}> = ({ lang }) => {
   const isAr = lang === 'ar';
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -98,91 +95,12 @@ export const ToastNotification: React.FC<{
       }, 4000);
     };
 
-    // 2. Quota threshold crossings listener (80%, 90%, 100%)
-    const handleQuotaThreshold = (e: Event) => {
-      const customEvent = e as CustomEvent<{
-        threshold: 80 | 90 | 100;
-        used: number;
-        remaining: number;
-        max: number;
-        plan: SubscriptionPlan;
-      }>;
-      const { threshold, remaining, max, plan } = customEvent.detail;
-      const id = `quota-${threshold}-${Date.now()}`;
-
-      let title = '';
-      let message = '';
-      let actionLabel = '';
-      let type: 'warning' | 'critical' = 'warning';
-
-      if (threshold === 80) {
-        type = 'warning';
-        title = isAr ? '⚠️ تنبيه: استهلكت 80% من باقتك اليوم!' : '⚠️ Warning: 80% of Daily Quota Used!';
-        message = isAr 
-          ? `متبقي لديك (${remaining} طلبات) فقط من أصل ${max} طلباً مسموحاً بها في باقتك. سارع بالترقية لتفادي توقف الخدمة.`
-          : `You only have ${remaining} requests remaining out of ${max}. Upgrade now to avoid disruption.`;
-        actionLabel = isAr ? 'ترقية الباقة ($5/شهر) ⚡' : 'Upgrade Plan ($5/mo) ⚡';
-      } else if (threshold === 90) {
-        type = 'warning';
-        title = isAr ? '🚨 تحذير عاجل: استهلكت 90% من باقتك!' : '🚨 Urgent: 90% of Quota Consumed!';
-        message = isAr 
-          ? `أنت على وشك استنفاد الرصيد اليومي بالكامل (متبقي فقط ${remaining} طلبات). رَقِّ باقتك الآن لتوليد غير محدود.`
-          : `Almost out of daily requests! Only ${remaining} prompts left today. Upgrade for unlimited access.`;
-        actionLabel = isAr ? 'ترقية فورية الآن ⚡' : 'Upgrade Instantly ⚡';
-      } else {
-        type = 'critical';
-        title = isAr ? '🛑 انتهت حصتك اليومية من الـ API (100%)' : '🛑 Daily API Quota 100% Exhausted';
-        message = isAr 
-          ? `لقد وصلت للحد الأقصى لباقتك اليوم (${max} طلباً). سيتجدد رصيدك عند منتصف الليل، أو يمكنك الترقية فوراً للاستمرار.`
-          : `You've reached your daily limit of ${max} requests. Resets at midnight, or upgrade now to resume.`;
-        actionLabel = isAr ? 'فتح الرصيد والترقية فوراً' : 'Unlock Quota Now';
-      }
-
-      const targetPlanToUpgrade: SubscriptionPlan = plan === 'free' ? 'lite' : 'pro';
-
-      const toastItem: ToastMessage = {
-        id,
-        title,
-        message,
-        type,
-        threshold,
-        remaining,
-        max,
-        action: {
-          label: actionLabel,
-          variant: threshold === 100 ? 'danger' : 'warning',
-          onClick: () => {
-            if (onOpenCheckout) {
-              onOpenCheckout(targetPlanToUpgrade);
-            } else {
-              window.dispatchEvent(new CustomEvent('open-checkout', { 
-                detail: { plan: targetPlanToUpgrade } 
-              }));
-            }
-          }
-        }
-      };
-
-      setToasts((prev) => {
-        // Prevent stacking duplicate threshold messages of same type
-        const filtered = prev.filter(t => t.threshold !== threshold);
-        return [...filtered, toastItem];
-      });
-
-      // Give user 10 seconds to read and interact with quota alerts
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-      }, 10000);
-    };
-
     window.addEventListener('show-toast', handleToastEvent);
-    window.addEventListener('quota-threshold-reached', handleQuotaThreshold);
 
     return () => {
       window.removeEventListener('show-toast', handleToastEvent);
-      window.removeEventListener('quota-threshold-reached', handleQuotaThreshold);
     };
-  }, [isAr, onOpenCheckout]);
+  }, []);
 
   if (toasts.length === 0) return null;
 
